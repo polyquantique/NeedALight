@@ -42,7 +42,7 @@ def Hprop(Np, vs, vi, vp, l, x, f, n):
     P = expm(1j * Q * l)
     N = expm(1j * Q2 * l)
     # Finding the products for domain lengths of n-segments
-    prod = np.ones((2 ** n, len(P), len(P)), dtype=np.complex128)
+    prod = np.ones((2**n, len(P), len(P)), dtype=np.complex128)
     for i, config in enumerate(product((P, N), repeat=n)):
         T = np.eye(len(P), dtype=np.complex128)
         for j in range(n):
@@ -198,7 +198,8 @@ def is_symplectic(S, rtol=1e-05, atol=1e-08):
     return False
 
 
-#The next two functions have been submited to TheWalrus and can be deleted once official version is 0.20.0
+# The next two functions can be deleted once TheWalrus' official version is 0.20.0
+
 
 def blochmessiah(S):
     """Returns the Bloch-Messiah decomposition of a symplectic matrix S = uff @ dff @ vff
