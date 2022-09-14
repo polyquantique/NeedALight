@@ -13,7 +13,6 @@ requirements = [
     "pytest",
     "StrawberryFields",
     "thewalrus",
-    "custom_poling",
     "jupyter"
 ]
 
