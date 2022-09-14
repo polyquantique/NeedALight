@@ -47,6 +47,7 @@ setup(
     license="Apache License 2.0",
     packages=find_packages(where="."),
     install_requires=requirements,
+    dependency_links=['https://github.com/abranczyk/custom-poling.git'],
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type='text/markdown',
     classifiers=classifiers,
