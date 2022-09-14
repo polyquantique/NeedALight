@@ -1,14 +1,22 @@
-"""Tests for HighGain functions"""
-# pylint: disable=no-self-use,redefined-outer-name
+"""Tests for propagator functions"""
+# pylint: disable=redefined-outer-name
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 # pylint: disable=unused-argument
+# pylint: disable=unnecessary-lambda-assignment
 
 import pytest
 import numpy as np
 from thewalrus.random import random_symplectic
-from NeedALight.propagator import Hprop, Total_prog, is_symplectic, phases, JSA, blochmessiah
+from NeedALight.propagator import (
+    Hprop,
+    Total_prog,
+    is_symplectic,
+    phases,
+    JSA,
+    blochmessiah,
+)
 
 
 @pytest.mark.parametrize("N", range(50, 500, 50))
@@ -73,7 +81,7 @@ def test_JSA_lowgain(N, Np):
 
     Fidelity = np.sum(Jn * np.conjugate(Jtn))
 
-    assert np.allclose(Fidelity, 1, atol=10 ** -5)
+    assert np.allclose(Fidelity, 1, atol=10**-5)
 
 
 @pytest.mark.parametrize("N", range(50, 500, 50))
