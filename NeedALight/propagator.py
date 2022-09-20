@@ -166,6 +166,7 @@ def JSA(T, vs, vi, vp, l, x):
     K = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
     return J, Ns, K, M, Nums, Numi
 
+# The next two functions (is_symplectic and blochmessiah) can be deleted once TheWalrus' official version is 0.20.0
 
 def is_symplectic(S, rtol=1e-05, atol=1e-08):
     """Checks if the matrix is symplectic
@@ -198,7 +199,6 @@ def is_symplectic(S, rtol=1e-05, atol=1e-08):
     return False
 
 
-# The next two functions can be deleted once TheWalrus' official version is 0.20.0
 
 
 def blochmessiah(S):
