@@ -3,4 +3,4 @@ NeedALight can be used to generate Heisenberg Propagators for waveguided sources
 
 If you find this library useful in your research please cite our paper: 
 
-`Martin Houde and Nicolás Quesada, Waveguided sources of consistent, single-temporal-mode squeezed light: the good, the bad, and the ugly. arXiv:2209.`
+Martin Houde and Nicolás Quesada, Waveguided sources of consistent, single-temporal-mode squeezed light: the good, the bad, and the ugly. [arXiv:2209.13491](https://arxiv.org/abs/2209.13491)
