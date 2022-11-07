@@ -166,6 +166,37 @@ def JSA(T, vs, vi, vp, l, x):
     K = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
     return J, Ns, K, M, Nums, Numi
 
+
+def symplectic_prop(T, vs, vi, vp, l, x):
+    """Given a full Heisenberg propagator, generates a symplectic propagator in the xxpp basis
+    
+    Args:
+        U (array): Heisenberg propagator with free propagation
+        vs (float): signal velocity
+        vi (float): idler velocity
+        vp (float): pump velocity
+        l (float): total length of crystal
+        x (array): vector of frequencies
+    Returns:
+        array: Symplectic propagator in the xxpp basis.
+    """
+    N = len(T)
+    # Removing free propagation phases and breaking it into blocks
+    U = phases(T, vs, vi, vp, l, x)
+    Uss = U[0 : N // 2, 0 : N // 2]
+    Usi = U[0 : N // 2, N // 2 : N]
+    Uiss = U[N // 2 : N, 0 : N // 2]
+    Uiis = U[N // 2 : N, N // 2 : N]
+    #First we rewrite propagator in extended basis: (a1,a2...an,b1,..bn,a1\dag... etc)
+    diag = np.block([[Uss, 0 * Uss],[0 * Uiis, np.conj(Uiis)]])
+    offdiag = np.block([[0 * Usi, Usi],[np.conj(Uiss), 0 * Uiss]])
+    U2doubled = np.block([[diag, offdiag],[np.conj(offdiag), np.conj(diag)]])
+    #This rotates from Xa Xb Pa Pb to ab a\dag b\dag basis. Need to apply inverse to properly rotate
+    R = (1 / np.sqrt(2)) * np.block([[ np.eye(len(U2doubled)//2), 1j *np.eye(len(U2doubled)//2)],[np.eye(len(U2doubled)//2),-1j * np.eye(len(U2doubled)//2)]]) 
+    
+    return np.conj(R).T @ U2doubled @ R
+
+
 # The next two functions (is_symplectic and blochmessiah) can be deleted once TheWalrus' official version is 0.20.0
 
 def is_symplectic(S, rtol=1e-05, atol=1e-08):
