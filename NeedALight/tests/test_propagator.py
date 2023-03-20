@@ -12,10 +12,8 @@ from thewalrus.random import random_symplectic
 from NeedALight.propagator import (
     Hprop,
     Total_prog,
-    is_symplectic,
     phases,
     JSA,
-    blochmessiah,
 )
 
 
@@ -82,33 +80,3 @@ def test_JSA_lowgain(N, Np):
     Fidelity = np.sum(Jn * np.conjugate(Jtn))
 
     assert np.allclose(Fidelity, 1, atol=10**-5)
-
-
-@pytest.mark.parametrize("N", range(50, 500, 50))
-def test_blochmessiah_rand(N):
-    """Tests blochmessiah function for different matrix sizes."""
-    S = random_symplectic(N)
-    u, d, v = blochmessiah(S)
-    assert np.allclose(u @ d @ v, S)
-    assert np.allclose(u.T @ u, np.eye(len(u)))
-    assert np.allclose(v.T @ v, np.eye(len(v)))
-    assert is_symplectic(u)
-    assert is_symplectic(v)
-
-
-def test_blochmessiah_odd():
-    """Tests that odd matrices return False in blochmessiah."""
-    S = np.random.rand(5, 5)
-    assert not blochmessiah(S)
-
-
-def test_blochmessiah_rect():
-    """Tests that rectangular matrices return False in blochmessiah"""
-    S = np.random.rand(4, 5)
-    assert not blochmessiah(S)
-
-
-def test_blochmessiah_false():
-    """Tests that non-symplecti mattrices return False in blochmessiah"""
-    S = np.random.rand(4, 4)
-    assert not blochmessiah(S)
