@@ -2,7 +2,7 @@
 
 from itertools import product
 import numpy as np
-from scipy.linalg import expm, sqrtm
+from scipy.linalg import expm
 
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
