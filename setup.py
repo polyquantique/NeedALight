@@ -11,7 +11,6 @@ requirements = [
     "scipy",
     "matplotlib",
     "pytest",
-    "StrawberryFields",
     "thewalrus",
     "jupyter",
 ]
