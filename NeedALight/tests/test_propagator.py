@@ -74,7 +74,7 @@ def test_JSA_lowgain(N, Np):
         * (np.sinc(a * (x - x[:, np.newaxis]) / (np.pi * sig)))
     )
 
-    Jn = J / np.linalg.norm(J)
+    Jn = np.abs(J) / np.linalg.norm(np.abs(J))
     Jtn = J_theory / np.linalg.norm(J_theory)
 
     Fidelity = np.sum(Jn * np.conjugate(Jtn))
