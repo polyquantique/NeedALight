@@ -157,7 +157,7 @@ def JSA(T, vs, vi, vp, l, x):
     L, s, Vh = np.linalg.svd(M)
     Sig = np.diag(s)
     D = np.arcsinh(2 * Sig) / 2
-    J = np.abs(L @ D @ Vh) / dw
+    J = L @ D @ Vh / dw
     # Number of signal photons
     Nums = np.conj(Usi) @ Usi.T
     Numi = Uiss @ (np.conj(Uiss).T)
