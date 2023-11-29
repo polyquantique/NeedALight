@@ -157,7 +157,7 @@ def JSA(T, vs, vi, vp, l, x):
     L, s, Vh = np.linalg.svd(M)
     Sig = np.diag(s)
     D = np.arcsinh(2 * Sig) / 2
-    J = np.abs(L @ D @ Vh) / dw
+    J = L @ D @ Vh / dw
     # Number of signal photons
     Nums = np.conj(Usi) @ Usi.T
     Numi = Uiss @ (np.conj(Uiss).T)
@@ -169,7 +169,7 @@ def JSA(T, vs, vi, vp, l, x):
 
 def symplectic_prop(T, vs, vi, vp, l, x):
     """Given a full Heisenberg propagator, generates a symplectic propagator in the xxpp basis
-    
+
     Args:
         U (array): Heisenberg propagator with free propagation
         vs (float): signal velocity
@@ -187,11 +187,83 @@ def symplectic_prop(T, vs, vi, vp, l, x):
     Usi = U[0 : N // 2, N // 2 : N]
     Uiss = U[N // 2 : N, 0 : N // 2]
     Uiis = U[N // 2 : N, N // 2 : N]
-    #First we rewrite propagator in extended basis: (a1,a2...an,b1,..bn,a1\dag... etc)
-    diag = np.block([[Uss, 0 * Uss],[0 * Uiis, np.conj(Uiis)]])
-    offdiag = np.block([[0 * Usi, Usi],[np.conj(Uiss), 0 * Uiss]])
-    U2doubled = np.block([[diag, offdiag],[np.conj(offdiag), np.conj(diag)]])
-    #This rotates from Xa Xb Pa Pb to ab a\dag b\dag basis. Need to apply inverse to properly rotate
-    R = (1 / np.sqrt(2)) * np.block([[ np.eye(len(U2doubled)//2), 1j *np.eye(len(U2doubled)//2)],[np.eye(len(U2doubled)//2),-1j * np.eye(len(U2doubled)//2)]]) 
-    
+    # First we rewrite propagator in extended basis: (a1,a2...an,b1,..bn,a1\dag... etc)
+    diag = np.block([[Uss, 0 * Uss], [0 * Uiis, np.conj(Uiis)]])
+    offdiag = np.block([[0 * Usi, Usi], [np.conj(Uiss), 0 * Uiss]])
+    U2doubled = np.block([[diag, offdiag], [np.conj(offdiag), np.conj(diag)]])
+    # This rotates from Xa Xb Pa Pb to ab a\dag b\dag basis. Need to apply inverse.
+    R = (1 / np.sqrt(2)) * np.block(
+        [
+            [np.eye(len(U2doubled) // 2), 1j * np.eye(len(U2doubled) // 2)],
+            [np.eye(len(U2doubled) // 2), -1j * np.eye(len(U2doubled) // 2)],
+        ]
+    )
+
     return np.conj(R).T @ U2doubled @ R
+
+
+def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
+    """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
+        crystal.
+
+    Args:
+        Np (int): Pump photon number
+        vs (float): signal velocity
+        vi (float): idler velocity
+        vp (float): pump velovity
+        y (float): squeezing interaction strength
+        spm (float): pump self-phase modulation strength
+        xpms (float): signal cross-phase modulation strength
+        xpmi (float): idler cross-phase modulation strength
+        beta (function): fuctional form of pump pulse at z0(normalized to Np)
+        density (function): Fourier transform of the energy density
+        w (array): vector of frequency values
+    Returns:
+        array: Full Heisenberg propagator
+
+    """
+    N = len(w)
+    P = np.eye(2 * N)
+    dz = domain[1] - domain[0]
+    dw = w[1] - w[0]
+    # these are all the unique values of w+w' that we need
+    w2 = np.linspace(2 * w[0], 2 * w[-1], 2 * N - 1)
+    # Need to generate the propagator for each z and stitch together
+    for z in domain:
+        # First generate the SPM matrix
+        # This should evaluate beta(z,w+w') at all unique values
+        betaz_vec = expm(
+            1j
+            * (spm * dw / vp**2)
+            * (z - domain[0])
+            * density(-w2 + w2[:, np.newaxis])
+        ) @ beta(w2)
+        # This converts it into matrix form
+        betaz_mat = np.zeros((N, N))
+        for i in range(N - 1):
+            betaz_mat = (
+                betaz_mat
+                + np.diag(
+                    betaz_vec[len(w2) // 2 + 1 + i] * np.ones(len(w) - 1 - i), k=i + 1
+                )
+                + np.diag(
+                    betaz_vec[len(w2) // 2 - 1 - i] * np.ones(len(w) - 1 - i), k=-i - 1
+                )
+            )
+
+        betaz_mat = np.flipud(
+            betaz_mat + np.diag(betaz_vec[len(w2) // 2] * np.ones(N), k=0)
+        )
+
+        # Constructing the
+        G = np.diag((1 / vs - 1 / vp) * w) + (
+            xpms * dw / (2 * np.pi * vs * vp)
+        ) * density(-w + w[:, np.newaxis])
+        H = np.diag((1 / vi - 1 / vp) * w) + (
+            xpmi * dw / (2 * np.pi * vi * vp)
+        ) * np.conj(density(-w + w[:, np.newaxis]))
+        F = (dw * y / (np.sqrt(2 * np.pi * vs * vi * vp))) * betaz_mat
+        Q = np.block([[G, F], [-np.conj(F).T, -np.conj(H).T]])
+        P = expm(1j * Q * dz) @ P
+
+    return P
