@@ -115,6 +115,7 @@ def test_pump_spm(Np, spm, z2):
     dz = z[1] - z[0]
 
     # Analytic expression
+    #Includes a manually implemented Fourier Transform
     beta = np.real_if_close(
         np.sum(
             np.exp(-1j * np.tensordot(w, z, axes=0) / vp)
