@@ -1,4 +1,5 @@
 """Tests for propagator functions"""
+
 # pylint: disable=redefined-outer-name
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
@@ -9,7 +10,17 @@
 import pytest
 import numpy as np
 from scipy.linalg import expm
-from NeedALight.propagator import Hprop, Total_prog, phases, JSA, SXPM_prop
+from thewalrus.quantum.gaussian_checks import is_symplectic
+from NeedALight.propagator import (
+    Hprop,
+    Total_prog,
+    phases,
+    JSA,
+    SXPM_prop,
+    JSAK,
+    Total_propK,
+    symplectic_prop,
+)
 
 
 @pytest.mark.parametrize("N", range(50, 500, 50))
@@ -115,7 +126,7 @@ def test_pump_spm(Np, spm, z2):
     dz = z[1] - z[0]
 
     # Analytic expression
-    #Includes a manually implemented Fourier Transform
+    # Includes a manually implemented Fourier Transform
     beta = np.real_if_close(
         np.sum(
             np.exp(-1j * np.tensordot(w, z, axes=0) / vp)
@@ -193,8 +204,8 @@ def test_comparison(Np, N):
     # Defining energy density function for gaussian pump pulse. Includes Np in definition
     def density(x):
         return Np * np.exp(-((x) ** 2) / (4 * (sig) ** 2))
-    
-    #For the the case where we dont S-X-PM
+
+    # For the the case where we dont S-X-PM
     def pump2(x):
         return np.exp(-((x) ** 2) / (2 * (sig) ** 2)) / np.power(np.pi * sig**2, 1 / 4)
 
@@ -266,8 +277,195 @@ def test_noint(xpms, xpmi, spm):
     UiisSPM = TSPM[N2 // 2 : N2, N2 // 2 : N2]
 
     assert all(
-        [np.allclose(Uss, UssSPM),
-        np.allclose(Uiis, UiisSPM),
-        np.allclose(UsiSPM, np.zeros_like(UsiSPM)),
-        np.allclose(UissSPM, np.zeros_like(UissSPM))]
+        [
+            np.allclose(Uss, UssSPM),
+            np.allclose(Uiis, UiisSPM),
+            np.allclose(UsiSPM, np.zeros_like(UsiSPM)),
+            np.allclose(UissSPM, np.zeros_like(UissSPM)),
+        ]
+    )
+
+
+@pytest.mark.parametrize("nk", range(51, 201, 50))
+@pytest.mark.parametrize("Np", [0.00001, 0.00002, 0.00003, 0.00004])
+def test_JSAK_lowgain(nk, Np):
+    """Tests that JSAK returns the well known analytical result for low gain."""
+    l = 1.0  # amplification region length
+    sig = 1  # pump wave packet spread
+    vp = 0.1
+    a = 1.61 / 1.13  # from symmetric grp vel matching
+    vi = vp / (1 - 2 * a * vp / (l * sig))
+    vs = vp / (1 + 2 * a * vp / (l * sig))
+    # Crystal properties
+    Ndomain = 1000  # Number of spatial points for non-linear/crystal grid
+    dz = (l) / Ndomain
+    domain_width = dz
+    number_domains = Ndomain
+    L = number_domains * domain_width
+
+    # Momenta grid
+    k_ft = 200 / L
+    dk = k_ft / nk
+    k = np.arange(-k_ft / 2, k_ft / 2, dk)
+
+    # defining gaussian pump pulse
+    def pump(x, scale=1):
+        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
+            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
+        )
+
+    # Domain for a tophat potential
+    domain = np.asarray([1] * int(Ndomain) + [1])
+    sc = 1
+    Lambda = lambda x, t: np.sqrt(Np) * pump(x + l - vp * t, scale=1 / sc)
+    ws = vs * k
+    wi = vi * k
+    z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
+    t = np.arange(0, 20 + 0.2, 0.2)
+    K = Total_propK(domain, Lambda, z_list, k, t, ws, wi)
+    J, _Ns, _Schmidt, _M, _Nums, _Numi = JSAK(K, dk)
+
+    J_theory = np.abs(
+        (np.sqrt(Np) / (np.sqrt(2 * np.pi * vs * vi)))
+        * np.exp(-((vi * k + vs * k[:, np.newaxis]) ** 2) / (2 * (sig) ** 2))
+        / np.power(np.pi * (sig / vp) ** 2, 1 / 4)
+        * (
+            L
+            * np.sinc(
+                L * (k * (1 - vi / vp) + k[:, np.newaxis] * (1 - vs / vp)) / (2 * np.pi)
+            )
+        )
+    )
+
+    Jn = np.abs(J) / np.linalg.norm(np.abs(J))
+    Jtn = J_theory / np.linalg.norm(J_theory)
+
+    Fidelity = np.sum(Jn * np.conjugate(Jtn))
+
+    assert np.allclose(Fidelity, 1, atol=10**-5)
+
+
+@pytest.mark.parametrize("nk", [101, 201])
+@pytest.mark.parametrize("Np", [0.00001, 0.02])
+@pytest.mark.parametrize("vp", [0.08, 0.1, 0.12])
+def test_ktzw_comparison(nk, Np, vp):
+    """Tests that JSA and JSAK functions return similar outputs for Ns,
+    JSA Fidelity, and Schmidt number. We allow for 0.5% error due to boundary issues"""
+    l = 1.0  # amplification region length
+    sig = 1  # pump wave packet spread
+    a = 1.61 / 1.13  # from symmetric grp vel matching
+    vi = vp / (1 - 2 * a * vp / (l * sig))
+    vs = vp / (1 + 2 * a * vp / (l * sig))
+    # Crystal properties
+    Ndomain = 1000  # Number of spatial points for non-linear/crystal grid
+    dz = (l) / Ndomain
+    domain_width = dz
+    number_domains = Ndomain
+    L = number_domains * domain_width
+
+    # Momenta grid
+    k_ft = 200 / L
+    dk = k_ft / nk
+    k = np.arange(-k_ft / 2, k_ft / 2, dk)
+
+    # defining gaussian pump pulse
+    def pump(x, scale=1):
+        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
+            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
+        )
+
+    # Domain for a tophat potential
+    domain = np.asarray([1] * int(Ndomain) + [1])
+    sc = 1
+    Lambda = lambda x, t: np.sqrt(Np) * pump(x + l - vp * t, scale=1 / sc)
+    ws = vs * k
+    wi = vi * k
+    z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
+    t = np.arange(0, 20 + 0.05, 0.05)
+    K = Total_propK(domain, Lambda, z_list, k, t, ws, wi)
+    Jk, Nsk, Schmidtk, _M, _Nums, _Numi = JSAK(K, dk)
+
+    # With z-w functions
+    wi = -8.5
+    wf = 8.5
+    x = np.linspace(wi, wf, nk)
+    pumpscaled = lambda x: np.exp(-((x) ** 2) / (2 * (sig) ** 2)) / np.power(
+        np.pi * (sig) ** 2, 1 / 4
+    )
+    prod, P, Nm = Hprop(Np, vs, vi, vp, dz, x, pumpscaled, 4)
+    T = Total_prog(domain, prod, P, Nm)
+    J, Ns, Schmidt, _M, _Nums, _Numi = JSA(T, vs, vi, vp, len(domain) * dz, x)
+
+    Jmax = np.abs(np.amax(J))
+    Jkmax = np.abs(np.amax(Jk)) / np.sqrt(vs * vi)
+
+    ErrorJSA = np.abs(Jmax - Jkmax) / Jmax
+    ErrorNs = np.abs(Ns - Nsk) / Ns
+    ErrorSchmidt = np.abs(Schmidt - Schmidtk) / Schmidt
+
+    assert all(
+        [
+            ErrorJSA < 1,
+            ErrorNs < 0.5,
+            ErrorSchmidt < 0.5,
+        ]
+    )
+
+
+@pytest.mark.parametrize("nk", [101, 201])
+@pytest.mark.parametrize("Np", [0.00001, 0.02])
+@pytest.mark.parametrize("vp", [0.08, 0.1, 0.12])
+def test_symplectic(nk, Np, vp):
+    """Tests that the extended propagators are truly symplectic"""
+    l = 1.0  # amplification region length
+    sig = 1  # pump wave packet spread
+    a = 1.61 / 1.13  # from symmetric grp vel matching
+    vi = vp / (1 - 2 * a * vp / (l * sig))
+    vs = vp / (1 + 2 * a * vp / (l * sig))
+    # Crystal properties
+    Ndomain = 1000  # Number of spatial points for non-linear/crystal grid
+    dz = (l) / Ndomain
+    domain_width = dz
+    number_domains = Ndomain
+    L = number_domains * domain_width
+
+    # Momenta grid
+    k_ft = 200 / L
+    dk = k_ft / nk
+    k = np.arange(-k_ft / 2, k_ft / 2, dk)
+
+    # defining gaussian pump pulse
+    def pump(x, scale=1):
+        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
+            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
+        )
+
+    # Domain for a tophat potential
+    domain = np.asarray([1] * int(Ndomain) + [1])
+    sc = 1
+    Lambda = lambda x, t: np.sqrt(Np) * pump(x + l - vp * t, scale=1 / sc)
+    ws = vs * k
+    wi = vi * k
+    z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
+    t = np.arange(0, 20 + 0.5, 0.5)
+    K = Total_propK(domain, Lambda, z_list, k, t, ws, wi)
+
+    # With z-w functions
+    wi = -8.5
+    wf = 8.5
+    x = np.linspace(wi, wf, nk)
+    pumpscaled = lambda x: np.exp(-((x) ** 2) / (2 * (sig) ** 2)) / np.power(
+        np.pi * (sig) ** 2, 1 / 4
+    )
+    prod, P, Nm = Hprop(Np, vs, vi, vp, dz, x, pumpscaled, 4)
+    T = Total_prog(domain, prod, P, Nm)
+
+    K_ext = symplectic_prop(K, -1 / (vs - vp), 1 / (vi + vp), 1 / vp, t[-1], k)
+    T_ext = symplectic_prop(T, vs, vi, vp, len(domain) * dz, x)
+
+    assert all(
+        [
+            is_symplectic(K_ext),
+            is_symplectic(T_ext),
+        ]
     )
