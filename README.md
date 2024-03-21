@@ -1,10 +1,11 @@
-## The Module
-NeedALight can be used to generate Heisenberg Propagators for waveguided sources and analyse the temporal mode structure of the light generated.
+# NeedALight
+A library that can be used to generate Heisenberg Propagators for waveguided sources, in either frequency-space or momentum-time space, and analyse the temporal mode structure of the light generated.
 
-If you find this library useful in your research please cite our paper: 
+If you find this library useful in your research please cite our paper, 
 
-Martin Houde and Nicolás Quesada, Waveguided sources of consistent, single-temporal-mode squeezed light: the good, the bad, and the ugly. [AVS Quantum Sci. 5, 011404 (2023)](https://avs.scitation.org/doi/10.1116/5.0133009)
+Martin Houde and Nicolás Quesada, Waveguided sources of consistent, single-temporal-mode squeezed light: the good, the bad, and the ugly. [AVS Quantum Sci. 5, 011404 (2023)](https://avs.scitation.org/doi/10.1116/5.0133009),
 
+which includes in depth theory concerning the derivation of the Heisenberg Propagators.
 ### Frequency-Space Solutions
 
 
