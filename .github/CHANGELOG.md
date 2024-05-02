@@ -1,3 +1,10 @@
+# Release 0.1.3
+
+### Major Modifications
+* Modified how the (z,t) pump envelope is generated in "example_ktspace.ipynb" for the (k,t) code. Now works for arbitrary dispersion.
+* Modified (k,t) functions in "propagator.py" to properly account for new method of generating pump envelope.
+* Added test to show linear dispersion gives proper solution for pump.
+
 # Release 0.1.2
 
 ### New Features
