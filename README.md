@@ -7,9 +7,17 @@ Martin Houde and Nicolás Quesada, Waveguided sources of consistent, single-temp
 
 which includes in depth theory concerning the derivation of the Heisenberg Propagators.
 ### Frequency-Space Solutions
+Generates the Heisenberg Propagator for the equations shown in [AVS Quantum Sci. 5, 011404 (2023)](https://avs.scitation.org/doi/10.1116/5.0133009). 
 
-
+ * Valid for linear dispersions. 
+ * Can also include self- and cross-phase modulation terms.
+ * Several different examples included in notebooks.
+ 
 ### Momentum-Time Solutions
+Generates the Heisenberg Propagator for equations of the form given in [Journal of Physics: Photonics 2, 035001(2020)](https://iopscience.iop.org/article/10.1088/2515-7647/ab87fc/meta) when applied to a non-degenerate system.
+
+ * Valid for all dispersions, including pump. 
+ * Example included in notebook.
 
 
 ## Installation 
@@ -23,4 +31,4 @@ Funding for NeedALight has been supplied by:
 
   * Ministère de l'Économie et de l’Innovation du Québec, 
   * Natural Sciences and Engineering Research Council of Canada, 
-  * European Union's Horizon Europe Research and Innovation Programme under agreement 101070700 project MIRAQLS.
+  * European Union's Horizon Europe Research and Innovation Programme under agreement 101070700 project [MIRAQLS](https://sites.google.com/view/miraqls/).
