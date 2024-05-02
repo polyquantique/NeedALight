@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Houde"
+  given-names: "Martin"
+  orcid: "https://orcid.org/0000-0002-1635-9443"
+- family-names: "Quesada"
+  given-names: "Nicolás"
+  orcid: "https://orcid.org/0000-0002-0175-1688"
+title: "NeedALight"
+version: 0.1.12
+doi:
+date-released: 2024-02-14
+url: "https://github.com/polyquantique/NeedALight"
