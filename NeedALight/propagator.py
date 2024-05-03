@@ -7,6 +7,7 @@ from scipy.linalg import expm
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
+# pylint: disable=consider-using-enumerate
 
 
 def Hprop(Np, vs, vi, vp, l, x, f, n):
@@ -233,10 +234,7 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
         # First generate the SPM matrix
         # This should evaluate beta(z,w+w') at all unique values
         betaz_vec = expm(
-            1j
-            * (spm * dw / vp**2)
-            * (z - domain[0])
-            * density(-w2 + w2[:, np.newaxis])
+            1j * (spm * dw / vp**2) * (z - domain[0]) * density(-w2 + w2[:, np.newaxis])
         ) @ beta(w2)
         # This converts it into matrix form
         betaz_mat = np.zeros((N, N))
@@ -268,65 +266,74 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
 
     return P
 
-def FtS2(domain,pump,z_list,k,t):
-    """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration 
+
+def FtS2(domain, pump, z_list, k):
+    """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration
     and pump pulse as functions of (z,t) via looping over k. This should allow for more k-values
     when compared to FtS which uses np.tensordot which doesn't work for large sets of k.
 
     Args:
         domain (array): array of +/- 1's characterizing the domain configuration
-        pump (function): functional form of pump pulse as a function of (z,t) normalized to Np
+        pump (function): functional form of pump pulse as a function of (t,z) normalized to Np
         z_list (array): list of position values, taken at center point, of crystal positions
         k (array): array momentum values
     Returns:
-        (array): S(k+k',t) matrix for a specific time 't' 
+        (array): S(k+k',t) matrix for a specific time 't'
     """
-    S = np.zeros((len(k),len(k)),dtype=np.complex128)
-    dz = z_list[1]-z_list[0]
+    S = np.zeros((len(k), len(k)), dtype=np.complex128)
+    dz = z_list[1] - z_list[0]
 
     for i in range(len(k)):
         for l in range(len(k)):
-            S[i,l] = np.sum(np.exp(-1j*(k[i]+k[l])*z_list)*pump(z_list,t)*domain/np.sqrt(2*np.pi)*dz)
+            S[i, l] = np.sum(
+                np.exp(-1j * (k[i] + k[l]) * z_list)
+                * pump
+                * domain
+                / np.sqrt(2 * np.pi)
+                * dz
+            )
 
     return S
 
-def Total_propK(domain,pump,z_list,k,t,ws,wi):
+
+def Total_propK(domain, pump, z_list, k, t, ws, wi):
     """Generates the total Heisenberg propagator
 
     Args:
         domain (array): array of +/- 1's characterizing the domain configuration
-        pump (function): functional form of pump pulse as a function of (z,t) normalized to Np
+        pump (array): array of pump pulse as a function of (t,z) normalized to Np
         z_list (array): list of position values, taken at center point, where nonlinearity exists
         k (array): array of momentum values
         ws (array): dispersion relation for signal photons (function of momenta)
         wi (array): dispersion relation for idler photon (function of momenta)
     Returns:
-        (array): K(k+k',tf), the total Heisenberg propagator at final time 
+        (array): K(k+k',tf), the total Heisenberg propagator at final time
     """
-    #Initializing
+    # Initializing
     K = np.identity(2 * len(k), dtype=np.complex128)
-    dk = k[1]-k[0]
-    dt = t[1]-t[0]
-    
-    #Constructing the diagonal blocks
-    Rs = np.diag(-1j*ws)
-    Ri = np.diag(1j*wi)
-    
-    for i in t:
-        S = 1j*FtS2(domain,pump,z_list,k,i)*dk/np.sqrt(2*np.pi)
-        Q = np.block([[Rs,S],[np.conjugate(S),Ri]])
-        K = expm(Q*dt)@K
+    dk = k[1] - k[0]
+    dt = t[1] - t[0]
+
+    # Constructing the diagonal blocks
+    Rs = np.diag(-1j * ws)
+    Ri = np.diag(1j * wi)
+
+    for i in range(len(t)):
+        S = 1j * FtS2(domain, pump[i, :], z_list, k) * dk / np.sqrt(2 * np.pi)
+        Q = np.block([[Rs, S], [np.conjugate(S), Ri]])
+        K = expm(Q * dt) @ K
 
     return K
 
-def JSAK(K,dk):
+
+def JSAK(K, dk):
     """Given a total Heisenberg propagator in (k,t) generates the JSA as well as any relevant
        moment matrix and property
-    
+
     Args:
         K (array): Total Heisenberg propagator
         dk (float): momentum stepsize
-    
+
     Returns:
         (array, :Joint spectral amplitude
         float,  :Number of signal photons
@@ -350,7 +357,7 @@ def JSAK(K,dk):
     Nums = np.conj(Ksi) @ Ksi.T
     Numi = Kiss @ (np.conj(Kiss).T)
     Ns = np.real(np.trace(Nums))
-    # Finding K    
+    # Finding K
     Schmidt = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
 
     return J, Ns, Schmidt, M, Nums, Numi

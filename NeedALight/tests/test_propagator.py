@@ -6,6 +6,7 @@
 # pylint: disable=too-many-locals
 # pylint: disable=unused-argument
 # pylint: disable=unnecessary-lambda-assignment
+# pylint: disable=consider-using-enumerate
 
 import pytest
 import numpy as np
@@ -308,20 +309,46 @@ def test_JSAK_lowgain(nk, Np):
     dk = k_ft / nk
     k = np.arange(-k_ft / 2, k_ft / 2, dk)
 
-    # defining gaussian pump pulse
-    def pump(x, scale=1):
-        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
-            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
-        )
-
     # Domain for a tophat potential
     domain = np.asarray([1] * int(Ndomain) + [1])
-    sc = 1
-    Lambda = lambda x, t: np.sqrt(Np) * pump(x + l - vp * t, scale=1 / sc)
     ws = vs * k
     wi = vi * k
     z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
     t = np.arange(0, 20 + 0.2, 0.2)
+
+    # defining gaussian pump pulse in momentum space with z_0=l
+    def pump(x, scale=1):
+        return (
+            np.exp(-((x) ** 2) / (2 * ((sig / vp) / scale) ** 2))
+            / np.power(np.pi * ((sig / vp) / scale) ** 2, 1 / 4)
+            * np.exp(1j * x * l)
+        )
+
+    sc = 1
+    # Pump function in (t,z) for dispersion and momentum profile determined above.
+    # To help with FT we define a different momenta grid
+    nkp = 801  # Number of momentum values for pump FT
+    kp_ft = 1000 / L
+    dkp = kp_ft / nkp
+    kp = np.arange(-kp_ft / 2, kp_ft / 2, dkp)
+
+    # Pump dispersion relation
+    wp = vp * kp
+
+    Lambda = np.zeros([len(t), len(z_list)], dtype=np.complex128)
+    for i in range(len(t)):
+        Lambda[i, :] = (
+            np.sqrt(Np)
+            * np.sum(
+                np.exp(-1j * wp[:, np.newaxis] * t[i])
+                * np.exp(1j * kp[:, np.newaxis] * (z_list))
+                * pump(kp[:, np.newaxis], scale=1 / sc),
+                axis=0,
+            )
+            * dkp
+            / np.sqrt(2 * np.pi)
+        )
+
     K = Total_propK(domain, Lambda, z_list, k, t, ws, wi)
     J, _Ns, _Schmidt, _M, _Nums, _Numi = JSAK(K, dk)
 
@@ -368,12 +395,6 @@ def test_ktzw_comparison(nk, Np, vp):
     dk = k_ft / nk
     k = np.arange(-k_ft / 2, k_ft / 2, dk)
 
-    # defining gaussian pump pulse
-    def pump(x, scale=1):
-        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
-            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
-        )
-
     # Domain for a tophat potential
     domain = np.asarray([1] * int(Ndomain) + [1])
     sc = 1
@@ -382,6 +403,40 @@ def test_ktzw_comparison(nk, Np, vp):
     wi = vi * k
     z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
     t = np.arange(0, 20 + 0.05, 0.05)
+
+    # defining gaussian pump pulse in momentum space with z_0=l
+    def pump(x, scale=1):
+        return (
+            np.exp(-((x) ** 2) / (2 * ((sig / vp) / scale) ** 2))
+            / np.power(np.pi * ((sig / vp) / scale) ** 2, 1 / 4)
+            * np.exp(1j * x * l)
+        )
+
+    sc = 1
+    # Pump function in (t,z) for momentum profile specified above and dispersion specified below.
+    # To help with FT we define a different momenta grid
+    nkp = 801  # Number of momentum values for pump FT
+    kp_ft = 1000 / L
+    dkp = kp_ft / nkp
+    kp = np.arange(-kp_ft / 2, kp_ft / 2, dkp)
+
+    # Pump dispersion relation
+    wp = vp * kp
+
+    Lambda = np.zeros([len(t), len(z_list)], dtype=np.complex128)
+    for i in range(len(t)):
+        Lambda[i, :] = (
+            np.sqrt(Np)
+            * np.sum(
+                np.exp(-1j * wp[:, np.newaxis] * t[i])
+                * np.exp(1j * kp[:, np.newaxis] * (z_list))
+                * pump(kp[:, np.newaxis], scale=1 / sc),
+                axis=0,
+            )
+            * dkp
+            / np.sqrt(2 * np.pi)
+        )
+
     K = Total_propK(domain, Lambda, z_list, k, t, ws, wi)
     Jk, Nsk, Schmidtk, _M, _Nums, _Numi = JSAK(K, dk)
 
@@ -434,21 +489,46 @@ def test_symplectic(nk, Np, vp):
     dk = k_ft / nk
     k = np.arange(-k_ft / 2, k_ft / 2, dk)
 
-    # defining gaussian pump pulse
-    def pump(x, scale=1):
-        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
-            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
-        )
-
     # Domain for a tophat potential
     domain = np.asarray([1] * int(Ndomain) + [1])
-    sc = 1
-    Lambda = lambda x, t: np.sqrt(Np) * pump(x + l - vp * t, scale=1 / sc)
     ws = vs * k
     wi = vi * k
     z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
     t = np.arange(0, 20 + 0.5, 0.5)
-    K = Total_propK(domain, Lambda, z_list, k, t, ws, wi)
+
+    # defining gaussian pump pulse in momentum space with z_0=l
+    def pump2(x, scale=1):
+        return (
+            np.exp(-((x) ** 2) / (2 * ((sig / vp) / scale) ** 2))
+            / np.power(np.pi * ((sig / vp) / scale) ** 2, 1 / 4)
+            * np.exp(1j * x * l)
+        )
+
+    # Pump function in (t,z) for momentum profile specified above and dispersion specified below.
+    # To help with FT we define a different momenta grid
+    nkp = 801  # Number of momentum values for pump FT
+    kp_ft = 1000 / L
+    dkp = kp_ft / nkp
+    kp = np.arange(-kp_ft / 2, kp_ft / 2, dkp)
+
+    # Pump dispersion relation
+    wp = vp * kp
+    sc = 1
+    Lambda2 = np.zeros([len(t), len(z_list)], dtype=np.complex128)
+    for i in range(len(t)):
+        Lambda2[i, :] = (
+            np.sqrt(Np)
+            * np.sum(
+                np.exp(-1j * wp[:, np.newaxis] * t[i])
+                * np.exp(1j * kp[:, np.newaxis] * (z_list))
+                * pump2(kp[:, np.newaxis], scale=1 / sc),
+                axis=0,
+            )
+            * dkp
+            / np.sqrt(2 * np.pi)
+        )
+
+    K = Total_propK(domain, Lambda2, z_list, k, t, ws, wi)
 
     # With z-w functions
     wi = -8.5
@@ -469,3 +549,58 @@ def test_symplectic(nk, Np, vp):
             is_symplectic(T_ext),
         ]
     )
+
+
+@pytest.mark.parametrize("Np", [0.00001, 0.02, 0.2])
+@pytest.mark.parametrize("vp", [0.08, 0.1, 0.12])
+def test_ktpump(Np, vp):
+    """Tests that obtaining the pump matrix from the equation 
+    of motion gives the proper solution for linear dispersion"""
+    l = 1.0  # amplification region length
+    sig = 1  # pump wave packet spread
+
+    # Domain for a tophat potential
+    z_list = np.linspace(0.0005, 1.0005, 1001) - l / 2
+    t = np.arange(0, 20 + 0.5, 0.5)
+
+    # defining gaussian pump pulse in momentum space with z_0=l
+    def pump2(x, scale=1):
+        return (
+            np.exp(-((x) ** 2) / (2 * ((sig / vp) / scale) ** 2))
+            / np.power(np.pi * ((sig / vp) / scale) ** 2, 1 / 4)
+            * np.exp(1j * x * l)
+        )
+
+    # Pump function in (t,z) for momentum profile specified above and dispersion specified below.
+    # To help with FT we define a different momenta grid
+    nkp = 801  # Number of momentum values for pump FT
+    kp_ft = 1000 / l
+    dkp = kp_ft / nkp
+    kp = np.arange(-kp_ft / 2, kp_ft / 2, dkp)
+
+    # Pump dispersion relation
+    wp = vp * kp
+    sc = 1
+    Lambda2 = np.zeros([len(t), len(z_list)], dtype=np.complex128)
+    for i in range(len(t)):
+        Lambda2[i, :] = (
+            np.sqrt(Np)
+            * np.sum(
+                np.exp(-1j * wp[:, np.newaxis] * t[i])
+                * np.exp(1j * kp[:, np.newaxis] * (z_list))
+                * pump2(kp[:, np.newaxis], scale=1 / sc),
+                axis=0,
+            )
+            * dkp
+            / np.sqrt(2 * np.pi)
+        )
+
+    # defining gaussian pump pulse
+    def pump(x, scale=1):
+        return np.exp(-((x) ** 2) / (2 * ((vp / sig) * scale) ** 2)) / np.power(
+            np.pi * ((vp / sig) * scale) ** 2, 1 / 4
+        )
+
+    Lambda = np.sqrt(Np) * pump(z_list + l - vp * t[:, np.newaxis], scale=1 / sc)
+
+    assert np.allclose(Lambda2, Lambda)
