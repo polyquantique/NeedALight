@@ -23,7 +23,7 @@ Generates the Heisenberg Propagator for equations of the form given in [Journal 
 Generates first and third order Magnus terms as given in [Phys. Rev. A 90, 063840 (2014)](https://doi.org/10.1103/PhysRevA.90.063840).
 
 * Works for Gaussian pump and either Sinc or Gaussian phase matching fucntion.
-* Relies on 'Cubature' package, other functions may not converge.
+* Relies on [Cubature](https://github.com/saullocastro/cubature) package, other functions may not converge.
 * Example included in notebook. 
 
 
