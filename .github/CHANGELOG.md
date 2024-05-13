@@ -1,3 +1,22 @@
+# Release 0.1.4
+
+### New Features
+* New Module "magnus.py" 
+    * New function "Magnus1" which calculates the first order Magnus term.
+    * New function "Magnus3_Re" which calculates the real part of the third order Magnus term.
+    * New function "Magnus3_Im" which calculates the imaginary part of the third order Magnus term.
+
+### New Documentation
+* New notebook "example_magnus.ipynb" which shows how to use the new module for a Gaussian pump and either Gaussian or Sinc PMF.
+
+### New Implemntation
+* Implemented new test for magnus module.
+
+
+
+
+
+
 # Release 0.1.3
 
 ### Major Modifications
