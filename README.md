@@ -14,10 +14,17 @@ Generates the Heisenberg Propagator for the equations shown in [AVS Quantum Sci.
  * Several different examples included in notebooks.
  
 ### Momentum-Time Solutions
-Generates the Heisenberg Propagator for equations of the form given in [Journal of Physics: Photonics 2, 035001(2020)](https://iopscience.iop.org/article/10.1088/2515-7647/ab87fc/meta) when applied to a non-degenerate system.
+Generates the Heisenberg Propagator for equations of the form given in [Journal of Physics: Photonics 2, 035001 (2020)](https://iopscience.iop.org/article/10.1088/2515-7647/ab87fc/meta) when applied to a non-degenerate system.
 
  * Valid for all dispersions, including pump. 
  * Example included in notebook.
+
+### Magnus module
+Generates first and third order Magnus terms as given in [Phys. Rev. A 90, 063840 (2014)](https://doi.org/10.1103/PhysRevA.90.063840).
+
+* Works for Gaussian pump and either Sinc or Gaussian phase matching fucntion.
+* Relies on 'Cubature' package, other functions may not converge.
+* Example included in notebook. 
 
 
 ## Installation 
