@@ -17,7 +17,7 @@ def Magnus1(F, w):
         w (array): list of frequencies
 
     Returns:
-        (array): J1(w,w'), first order Magnus term
+        (array): J1(w,w'): first order Magnus term
     """
 
     return F(w, w[:, np.newaxis], w + w[:, np.newaxis])
@@ -31,7 +31,7 @@ def Magnus3_Re(F, w):
         w (array): list of frequencies
 
     Returns:
-        (array): J3(w,w'), first order Magnus term
+        (array): J3(w,w'): real part of third order Magnus term
     """
     # This term is broken down into two different contribution.
 
@@ -145,7 +145,7 @@ def Magnus3_Im(F, w):
         w (array): list of frequencies
 
     Returns:
-        (array): J3(w,w'), first order Magnus term
+        (array): K3(w,w'): imagineray part of third order Magnus term
     """
 
     # Defining the K3 function for cubature. Extra factor for convergence.
@@ -186,3 +186,246 @@ def Magnus3_Im(F, w):
     K3 = test3.reshape(len(w), len(w)) / (0.01**3)
 
     return K3
+
+def Magnus1CW_data(ws,wi,k_o,k_e,k_pol,p_k,L):
+    """Generates first Magnus term for Continous-Wave model from given data set
+    
+    Args:
+        ws (array): signal frequencies of interest, interpolated from data given a range of wavelengths
+        wi (array): corresponding idler frequencies such that wi=wp_avg-ws
+        k_o (function): interpolating function generating wavevector given ordinary(signal) frequency
+        k_e (function): interpolating function generating wavevector given extra-ordinary(idler) frequency
+        k_pol (float): poling wavevector to induce conservation of momenta
+        p_k (float): wavevector of CW pump   
+        L (float): length of interaction region/crystal
+    
+    Returns:
+        J1(w): first order magnus term.
+    
+    """
+    J1 = np.sinc(L*(k_o(ws)+k_e(wi)+k_pol-p_k)/(2*np.pi))
+
+
+
+    return J1
+
+def Magnus3CW_data_Re(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
+    """Generates real part of the third order Magnus term for Continous-Wave model from given data set
+    
+    Args:
+        omega_o (array): full data set of ordinary frequencies
+        omega_o (array): full data set of extra-ordinary frequencies
+        ws (array): signal frequencies of interest, interpolated from data given a range of wavelengths
+        wi (array): corresponding idler frequencies such that wi=wp_avg-ws
+        k_o (function): interpolating function generating wavevector given ordinary(signal) frequency
+        k_e (function): interpolating function generating wavevector given extra-ordinary(idler) frequency
+        k_pol (float): poling wavevector to induce conservation of momenta
+        p_k (float): wavevector of CW pump   
+        L (float): length of interaction region/crystal
+    
+    Returns:
+        J3(w): real contribution of third order magnus term
+    
+    """
+    #First part of contribution is simple.
+    J1 = np.sinc(L*(k_o(ws)+k_e(wi)+k_pol-p_k)/(2*np.pi))
+
+    J3_1 = np.conjugate(J1)*J1*J1*np.pi**2/3
+
+    #Second Part of contribution
+    #Integrand for J_3^2 contribution 
+    def J3_2_int(ws,wi,wq,wq2):
+        N = len(ws)
+        J3_2 = np.zeros(N)
+        for i in range(N):
+            if omega_o[-1] <= ws[i] - wq <= omega_o[0] and omega_e[-1] <= wi[i] - wq2 <= omega_e[0]:
+                J3_2[i]=np.sinc(L*(k_o(ws[i]-wq)+k_e(wi[i]-wq2)+k_pol-p_k)/(2*np.pi))  *  np.sinc(L*(k_o(ws[i]-wq)+k_e(wi[i])+k_pol-p_k)/(2*np.pi))  *  np.sinc(L*(k_o(ws[i])+k_e(wi[i]-wq2)+k_pol-p_k)/(2*np.pi))
+            else:
+                J3_2[i] = 0
+        return J3_2
+
+    #Cubature is finickey and requires an overall factor to help with convergence.
+    c_factor = 0.0000005
+    #Defining function to fit cubature requirements
+    def funcJ3_cuba(x_array,ws,wi):
+        x = x_array[0]
+        y = x_array[1]
+        return c_factor*(J3_2_int(ws,wi,x/(1-x),y/(1-y))-J3_2_int(ws,wi,-x/(1-x),y/(1-y))-J3_2_int(ws,wi,x/(1-x),-y/(1-y))+J3_2_int(ws,wi,-x/(1-x),-y/(1-y)))/(x*y*(1-x)*(1-y))
+
+    ndim=2 #Number of variables we are integrating over
+    fdim=len(ws)  #Dimension of the output
+    xmin = np.array([0, 0])
+    xmax = np.array([1, 1])
+    J3t, _J3Et = cubature(funcJ3_cuba, ndim, fdim, xmin, xmax, args=(ws,wi),  adaptive='h', vectorized=False)
+    J3_2 = J3t/c_factor
+    
+    return J3_1+J3_2
+
+def Magnus3CW_data_Im(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
+    """Generates imaginary part of the third order Magnus term for Continous-Wave model from given data set
+    
+    Args:
+        omega_o (array): full data set of ordinary frequencies
+        omega_o (array): full data set of extra-ordinary frequencies
+        ws (array): signal frequencies of interest, interpolated from data given a range of wavelengths
+        wi (array): corresponding idler frequencies such that wi=wp_avg-ws
+        k_o (function): interpolating function generating wavevector given ordinary(signal) frequency
+        k_e (function): interpolating function generating wavevector given extra-ordinary(idler) frequency
+        k_pol (float): poling wavevector to induce conservation of momenta
+        p_k (float): wavevector of CW pump   
+        L (float): length of interaction region/crystal
+    
+    Returns:
+        K3(w): real contribution of third order magnus term
+    
+    """
+    #Corrections depends on First order term
+    J1 = np.sinc(L*(k_o(ws)+k_e(wi)+k_pol-p_k)/(2*np.pi))
+
+    #Two contributions from integrals
+    def K1_int(ws,wi,wq):
+        N = len(ws)
+        K1 = np.zeros(N)
+        for i in range(N):
+            if omega_o[-1] <= ws[i] - wq <= omega_o[0]:
+                K1[i]=np.sinc(L*(k_o(ws[i]-wq)+k_e(wi[i])+k_pol-p_k)/(2*np.pi))**2
+            else:
+                K1[i] = 0
+        return K1
+
+    def K2_int(ws,wi,wq):
+        N = len(ws)
+        K2 = np.zeros(N)
+        for i in range(N):
+            if omega_e[-1] <= wi[i] - wq <= omega_e[0]:
+                K2[i]=np.sinc(L*(k_o(ws[i])+k_e(wi[i]-wq)+k_pol-p_k)/(2*np.pi))**2
+            else:
+                K2[i] = 0
+        return K2
+
+    #Convergence factor for cubature
+    c_factork = 0.00001
+    #Defining function to fit cubature requirements
+    def funcK_cuba(x_array,ws,wi):
+        x = x_array[0]
+        return c_factork*(K1_int(ws,wi,x/(1-x))+K2_int(ws,wi,x/(1-x))-K1_int(ws,wi,-x/(1-x))-K2_int(ws,wi,-x/(1-x)))/(x*(1-x)) 
+
+    ndim=1 #Number of variables we are integrating over
+    fdim=len(ws)  #Dimension of the output
+    xmin = np.array([0])
+    xmax = np.array([1])
+
+    Kt, _KEt = cubature(funcK_cuba, ndim, fdim, xmin, xmax, args=(ws,wi),  adaptive='h', vectorized=False)
+
+    #The full corrections has an overall factor of J1.
+    K3 = np.pi*J1*Kt/c_factork
+    
+    
+    
+    return K3
+
+def Magnus1CW_fit(ws,wi,ks_poly,ki_poly,k_pol,p_k,L):
+    """Generates first Magnus term for Continous-Wave model using polynomial fits for dispersion relations
+    
+    Args:
+        ws (array): signal frequencies of interest, interpolated from data given a range of wavelengths
+        wi (array): corresponding idler frequencies such that wi=wp_avg-ws
+        ks_poly (poly1d): expansion polynomial for signal dispersion relation
+        ki_poly (poly1d): expansion polynomial for idler dispersion relation
+        k_pol (float): poling wavevector to induce conservation of momenta
+        p_k (float): wavevector of CW pump   
+        L (float): length of interaction region/crystal
+    
+    Returns:
+        J1(w): first order magnus term.
+    
+    """
+    J1 = np.sinc(L*(ks_poly(ws)+ki_poly(wi)+k_pol-p_k)/(2*np.pi))
+
+    return J1
+
+def Magnus3CW_fit_Re(ws,wi,ks_poly,ki_poly,k_pol,p_k,L):
+    """Generates real part of third order Magnus term for Continous-Wave model using polynomial fits for dispersion relations
+    
+    Args:
+        ws (array): signal frequencies of interest, interpolated from data given a range of wavelengths
+        wi (array): corresponding idler frequencies such that wi=wp_avg-ws
+        ks_poly (poly1d): expansion polynomial for signal dispersion relation
+        ki_poly (poly1d): expansion polynomial for idler dispersion relation
+        k_pol (float): poling wavevector to induce conservation of momenta
+        p_k (float): wavevector of CW pump   
+        L (float): length of interaction region/crystal
+    
+    Returns:
+        J3(w): real part of third order magnus term.
+    
+    """
+    #Define phase-matching function with included cubature convergence factor
+    cfit=0.1
+    def PMF(ws,wi):
+        return cfit*np.sinc(L*(ks_poly(ws)+ki_poly(wi)+k_pol-p_k)/(2*np.pi))
+    
+    #First contribution
+    J3_1 = (np.pi**2/3)*(PMF(ws,wi)/cfit)**3
+
+    #Second contribution
+    J3_2_int_fit = lambda x,y,ws,wi: PMF(ws-y,wi-x)*PMF(ws,wi-x)*PMF(ws-y,wi)
+
+    def funcJ3_fit_cuba(x_array,ws,wi):
+        x = x_array[0]
+        y =  x_array[1]
+        return cfit*(J3_2_int_fit(x/(1-x),y/(1-y),ws,wi)-J3_2_int_fit(-x/(1-x),y/(1-y),ws,wi)-J3_2_int_fit(x/(1-x),-y/(1-y),ws,wi)+J3_2_int_fit(-x/(1-x),-y/(1-y),ws,wi))/(x*y*(1-x)*(1-y))
+
+    #Integral properties
+    ndim=2 #Number of variables we are integrating over
+    fdim=len(ws)  #Dimension of the output/J3
+    xmin = np.array([0, 0])
+    xmax = np.array([1, 1])
+
+    #Using cubature
+    J3fitT, _J3fitET = cubature(funcJ3_fit_cuba, ndim, fdim, xmin, xmax, args=(ws,wi), adaptive='h', vectorized=False)
+
+    J3_2_fit = J3fitT/cfit**4
+
+    return J3_1+J3_2_fit
+
+def Magnus3CW_fit_Im(ws,wi,ks_poly,ki_poly,k_pol,p_k,L):
+    """Generates imaginary part of third order Magnus term for Continous-Wave model using polynomial fits for dispersion relations
+    
+    Args:
+        ws (array): signal frequencies of interest, interpolated from data given a range of wavelengths
+        wi (array): corresponding idler frequencies such that wi=wp_avg-ws
+        ks_poly (poly1d): expansion polynomial for signal dispersion relation
+        ki_poly (poly1d): expansion polynomial for idler dispersion relation
+        k_pol (float): poling wavevector to induce conservation of momenta
+        p_k (float): wavevector of CW pump   
+        L (float): length of interaction region/crystal
+    
+    Returns:
+        K3(w): imaginary part of third order magnus term.
+    
+    """
+    #Define phase-matching function with included cubature convergence factor
+    cfit=0.1
+    def PMF(ws,wi):
+        return cfit*np.sinc(L*(ks_poly(ws)+ki_poly(wi)+k_pol-p_k)/(2*np.pi))
+    
+    K1_int_fit = lambda x,ws,wi: PMF(ws,wi-x)*PMF(ws,wi-x)*PMF(ws,wi)
+    K2_int_fit = lambda x,ws,wi: PMF(ws-x,wi)*PMF(ws-x,wi)*PMF(ws,wi)
+
+    def funcK_fit_cuba(x_array,ws,wi):
+        x = x_array[0]
+        return cfit*(K1_int_fit(x/(1-x),ws,wi)-K1_int_fit(-x/(1-x),ws,wi)+K2_int_fit(x/(1-x),ws,wi)-K2_int_fit(-x/(1-x),ws,wi))/(x*(1-x))
+
+    #Integral properties
+    ndim=1 #Number of variables we are integrating over
+    fdim=len(ws)  #Dimension of the output/J3
+    xmin = np.array([0])
+    xmax = np.array([1])
+
+    #Using cubature
+    K_fitT, _K_fitET = cubature(funcK_fit_cuba, ndim, fdim, xmin, xmax, args=(ws,wi), adaptive='h', vectorized=False)
+
+    K_fit = np.pi*K_fitT/cfit**4
+
+    return K_fit
