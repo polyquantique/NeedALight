@@ -5,9 +5,17 @@
     * New function "Magnus1" which calculates the first order Magnus term.
     * New function "Magnus3_Re" which calculates the real part of the third order Magnus term.
     * New function "Magnus3_Im" which calculates the imaginary part of the third order Magnus term.
+    * New function "Magnus1CW_data" which calculates the first order Magnus term for a Continuous Wave pump and disperion relations obtained from data.
+    * New function "Magnus3CW_data_Re" which calculates the real part of the third order Magnus term for a Continuous Wave pump and disperion relations obtained from data.
+    * New function "Magnus3CW_data_Im" which calculates the imaginary part of the third order Magnus term for a Continuous Wave pump and disperion relations obtained from data.
+    * New function "Magnus1CW_fit" which calculates the first order Magnus term for a Continuous Wave pump and disperion relations obtained from fit parameters.
+    * New function "Magnus3CW_fit_Re" which calculates the real part of the third order Magnus term for a Continuous Wave pump and disperion relations obtained from fit parameters.
+    * New function "Magnus3CW_fit_Im" which calculates the imaginary part of the third order Magnus term for a Continuous Wave pump and disperion relations obtained from fit parameters.
 
 ### New Documentation
 * New notebook "example_magnus.ipynb" which shows how to use the new module for a Gaussian pump and either Gaussian or Sinc PMF.
+* New notebook "example_magnus_cw_data.ipynb" which shows how to use the new set of 'Magnus#CW_" functions using experimental data.
+* New notebook "example_magnus_cw_fit.ipynb" which shows how to the 'Magnus#CW_fit_" given a set of fit parameters of a dispersion relation. 
 
 ### New Implemntation
 * Implemented new test for magnus module.
