@@ -20,10 +20,11 @@ Generates the Heisenberg Propagator for equations of the form given in [Journal 
  * Example included in notebook.
 
 ### Magnus module
-Generates first and third order Magnus terms as given in [Phys. Rev. A 90, 063840 (2014)](https://doi.org/10.1103/PhysRevA.90.063840).
+Generates first and third order Magnus terms as given in [Phys. Rev. A 90, 063840 (2014)](https://doi.org/10.1103/PhysRevA.90.063840) for pulsed and continuous wave pumps.
 
-* Works for Gaussian pump and either Sinc or Gaussian phase matching fucntion.
+* Pulsed code works for Gaussian pump and either Sinc or Gaussian phase-matching function.
 * Relies on [Cubature](https://github.com/saullocastro/cubature) package, other functions may not converge.
+* CW works for both experimental data or fit parameters. Assumes Sinc phase-matching function.
 * Example included in notebook. 
 
 
