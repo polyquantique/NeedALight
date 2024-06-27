@@ -7,10 +7,12 @@
 # pylint: disable=unused-argument
 # pylint: disable=unnecessary-lambda-assignment
 # pylint: disable=consider-using-enumerate
+# pylint: disable=no-name-in-module
 
 import pytest
 import numpy as np
 from scipy.linalg import expm
+from scipy.special import erfi
 from thewalrus.quantum.gaussian_checks import is_symplectic
 from NeedALight.propagator import (
     Hprop,
@@ -21,6 +23,11 @@ from NeedALight.propagator import (
     JSAK,
     Total_propK,
     symplectic_prop,
+)
+from NeedALight.magnus import (
+    Magnus1,
+    Magnus3_Re,
+    Magnus3_Im,
 )
 
 
@@ -554,7 +561,7 @@ def test_symplectic(nk, Np, vp):
 @pytest.mark.parametrize("Np", [0.00001, 0.02, 0.2])
 @pytest.mark.parametrize("vp", [0.08, 0.1, 0.12])
 def test_ktpump(Np, vp):
-    """Tests that obtaining the pump matrix from the equation 
+    """Tests that obtaining the pump matrix from the equation
     of motion gives the proper solution for linear dispersion"""
     l = 1.0  # amplification region length
     sig = 1  # pump wave packet spread
@@ -604,3 +611,79 @@ def test_ktpump(Np, vp):
     Lambda = np.sqrt(Np) * pump(z_list + l - vp * t[:, np.newaxis], scale=1 / sc)
 
     assert np.allclose(Lambda2, Lambda)
+
+
+@pytest.mark.parametrize("N", [101, 201, 301, 401])
+@pytest.mark.parametrize("sig", [0.8, 1, 1.2, 2])
+def test_magnus(N, sig):
+    """Tests Magnus terms agree with analytical results for Gaussian PMF."""
+    l = 1.0  # amplification region length
+    a = 1.61 / 1.13  # from symmetric grp vel matching
+    vp = 0.1  # pump velocity, does not change anything for magnus.
+
+    def symmetric_v(vp, sig, l, a):
+        vi = vp / (1 - 2 * a * vp / (l * sig))
+        vs = vp / (1 + 2 * a * vp / (l * sig))
+        return vs, vi
+
+    vs, vi = symmetric_v(vp, sig, l, a)
+
+    kappa = 1 / vs - 1 / vp
+
+    # Frequency values
+    wi = -4
+    wf = 4
+    w = np.linspace(wi, wf, N)
+
+    # For the pump, we take it ot be L2 normalized.
+    def pump(x):
+        return np.exp(-((x) ** 2) / (2 * (sig) ** 2)) / np.power(np.pi * sig**2, 1 / 4)
+
+    # Define a Gaussian phase-matching function.
+    def PMF2(x, y, z):
+        return np.exp(-((x / vs + y / vi - z / vp) ** 2) / (2 * (sig * kappa) ** 2))
+
+    # Product of PMF and Pump Envelope which is to be integrated
+    F = lambda x, y, z: pump(z) * PMF2(x, y, z)
+
+    # Obtaining magnus terms from cubature functions
+    J1 = Magnus1(F, w)
+    J3 = Magnus3_Re(F, w)
+    K3 = Magnus3_Im(F, w)
+
+    # Next we consider analytics.
+    tau = 1 / (np.sqrt(2) * sig)  # To equate the two different conventions used.
+
+    f0 = (
+        lambda x: np.sqrt(2 * tau)
+        * np.exp(-2 * tau**2 * (x**2))
+        / np.power(np.pi, 1 / 4)
+    )
+    f1 = lambda x: np.sqrt(3) * f0(x) * erfi(np.sqrt(4 / 3) * tau * x)
+
+    J1_th = f0(w) * f0(w[:, np.newaxis])
+    J3_th = (f0(w) * f0(w[:, np.newaxis]) - f1(w) * f1(w[:, np.newaxis])) / 12
+    K3_th = -(f0(w) * f1(w[:, np.newaxis]) - f1(w) * f0(w[:, np.newaxis])) / (
+        4 * np.sqrt(3)
+    )  # Extra minus sign is due to different conventions used
+
+    J1n = J1 / np.linalg.norm(J1)
+    J1tn = J1_th / np.linalg.norm(J1_th)
+
+    J3n = J3 / np.linalg.norm(J3)
+    J3tn = J3_th / np.linalg.norm(J3_th)
+
+    K3n = K3 / np.linalg.norm(K3)
+    K3tn = K3_th / np.linalg.norm(K3_th)
+
+    FidelityJ1 = np.sum(J1n * np.conjugate(J1tn))
+    FidelityJ3 = np.sum(J3n * np.conjugate(J3tn))
+    FidelityK3 = np.sum(K3n * np.conjugate(K3tn))
+
+    assert all(
+        [
+            np.allclose(FidelityJ1, 1, atol=10**-4),
+            np.allclose(FidelityJ3, 1, atol=10**-2),
+            np.allclose(FidelityK3, 1, atol=10**-2),
+        ]
+    )

@@ -253,7 +253,7 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
             betaz_mat + np.diag(betaz_vec[len(w2) // 2] * np.ones(N), k=0)
         )
 
-        # Constructing the
+        # Constructing the diagonal blocks
         G = np.diag((1 / vs - 1 / vp) * w) + (
             xpms * dw / (2 * np.pi * vs * vp)
         ) * density(-w + w[:, np.newaxis])

@@ -14,6 +14,7 @@ requirements = [
     "thewalrus",
     "jupyter",
     "custom-poling",
+    "cubature",
 ]
 
 classifiers = [
