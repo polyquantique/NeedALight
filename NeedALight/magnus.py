@@ -209,7 +209,7 @@ def Magnus1CW_data(ws,wi,k_o,k_e,k_pol,p_k,L):
 
     return J1
 
-def Magnus3CW_data_Re(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
+def Magnus3CW_data_Re(omega,ws,wi,k_o,k_e,k_pol,p_k,L):
     """Generates real part of the third order Magnus term for Continous-Wave model from given data set
     
     Args:
@@ -238,7 +238,7 @@ def Magnus3CW_data_Re(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
         N = len(ws)
         J3_2 = np.zeros(N)
         for i in range(N):
-            if omega_o[-1] <= ws[i] - wq <= omega_o[0] and omega_e[-1] <= wi[i] - wq2 <= omega_e[0]:
+            if omega[-1] <= ws[i] - wq <= omega[0] and omega[-1] <= wi[i] - wq2 <= omega[0]:
                 J3_2[i]=np.sinc(L*(k_o(ws[i]-wq)+k_e(wi[i]-wq2)+k_pol-p_k)/(2*np.pi))  *  np.sinc(L*(k_o(ws[i]-wq)+k_e(wi[i])+k_pol-p_k)/(2*np.pi))  *  np.sinc(L*(k_o(ws[i])+k_e(wi[i]-wq2)+k_pol-p_k)/(2*np.pi))
             else:
                 J3_2[i] = 0
@@ -261,7 +261,7 @@ def Magnus3CW_data_Re(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
     
     return J3_1+J3_2
 
-def Magnus3CW_data_Im(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
+def Magnus3CW_data_Im(omega,ws,wi,k_o,k_e,k_pol,p_k,L):
     """Generates imaginary part of the third order Magnus term for Continous-Wave model from given data set
     
     Args:
@@ -287,7 +287,7 @@ def Magnus3CW_data_Im(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
         N = len(ws)
         K1 = np.zeros(N)
         for i in range(N):
-            if omega_o[-1] <= ws[i] - wq <= omega_o[0]:
+            if omega[-1] <= ws[i] - wq <= omega[0]:
                 K1[i]=np.sinc(L*(k_o(ws[i]-wq)+k_e(wi[i])+k_pol-p_k)/(2*np.pi))**2
             else:
                 K1[i] = 0
@@ -297,7 +297,7 @@ def Magnus3CW_data_Im(omega_o,omega_e,ws,wi,k_o,k_e,k_pol,p_k,L):
         N = len(ws)
         K2 = np.zeros(N)
         for i in range(N):
-            if omega_e[-1] <= wi[i] - wq <= omega_e[0]:
+            if omega[-1] <= wi[i] - wq <= omega[0]:
                 K2[i]=np.sinc(L*(k_o(ws[i])+k_e(wi[i]-wq)+k_pol-p_k)/(2*np.pi))**2
             else:
                 K2[i] = 0
