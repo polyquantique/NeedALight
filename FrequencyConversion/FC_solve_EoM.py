@@ -1,7 +1,6 @@
 """Functions to calculate the numerical solution to the FC equations of motion using linear algebra"""
 
-import numpy as jnp
-from scipy.linalg import svd
+import numpy as np
 from scipy.linalg import expm
 from scipy.special import hermite
 
@@ -36,7 +35,7 @@ def pulse_shape(dw, sig, n=0):
     Returns:
         array: pulse shape
     """
-    gaussian = jnp.exp(-(dw**2) / (2 * sig**2)) / jnp.sqrt(2 * jnp.pi * sig**2)
+    gaussian = np.exp(-(dw**2) / (2 * sig**2)) / np.sqrt(2 * np.pi * sig**2)
     return gaussian * hermite(n)(dw / sig)
 
 
@@ -83,11 +82,11 @@ def get_prop(dw, vp, va, vc, pump, L, D=1):
     ka = 1 / va - 1 / vp
     kc = 1 / vc - 1 / vp
 
-    Ka = jnp.diag(1j * dw * ka)
-    Kc = jnp.diag(1j * dw * kc)
+    Ka = np.diag(1j * dw * ka)
+    Kc = np.diag(1j * dw * kc)
     # Bottom left and upper right (non-diagonal) blocks
 
-    J = jnp.block([[Ka, -1j * jnp.conj(D) * pump], [-1j * D * pump.conj().T, Kc]])
+    J = np.block([[Ka, -1j * np.conj(D) * pump], [-1j * D * pump.conj().T, Kc]])
     prop = expm(J * L)
     return J, prop
 
@@ -115,19 +114,19 @@ def check_prop(prop, print_checks=False):
     cond3b = dag(Uc) @ Uc + dag(Va) @ Va
     cond2 = Ua @ dag(Vc) - Va @ dag(Uc)
     cond4 = dag(Ua) @ Va - dag(Vc) @ Uc
-    I = jnp.identity(N)
-    O = jnp.zeros((N, N))
-    conds = jnp.array([cond1a, cond1b, cond2, cond3a, cond3b, cond4])
-    comps = jnp.array([I, I, O, I, I, O])
+    I = np.identity(N)
+    O = np.zeros((N, N))
+    conds = np.array([cond1a, cond1b, cond2, cond3a, cond3b, cond4])
+    comps = np.array([I, I, O, I, I, O])
     labels = ["1a", "1b", "2", "3a", "3b", "4"]
-    to_return = jnp.array([])
+    to_return = np.array([])
     for i in range(len(labels)):
         cond = conds[i]
         comp = comps[i]
         txt = "Condition {name} is {TF}"
         if print_checks:
-            print(txt.format(name=labels[i], TF=jnp.allclose(cond, comp)))
-        to_return = jnp.append(to_return, jnp.max(jnp.abs(cond - comp)))
+            print(txt.format(name=labels[i], TF=np.allclose(cond, comp)))
+        to_return = np.append(to_return, np.max(np.abs(cond - comp)))
     return to_return
 
 
@@ -152,11 +151,11 @@ def remove_phases(prop, dw, L, vp, va, vc):
     # separate into blocks
     Ua, Va, Vc, Uc = get_blocks(prop)
     # remove phases
-    Uc = jnp.diag(jnp.exp(1j * dw * kc * L)) @ Uc
-    Vc = jnp.diag(jnp.exp(1j * dw * kc * L)) @ Vc
-    Va = jnp.diag(jnp.exp(-1j * dw * ka * L)) @ Va
-    Ua = jnp.diag(jnp.exp(-1j * dw * ka * L)) @ Ua
-    return jnp.block([[Ua, Va], [Vc, Uc]])
+    Uc = np.diag(np.exp(1j * dw * kc * L)) @ Uc
+    Vc = np.diag(np.exp(1j * dw * kc * L)) @ Vc
+    Va = np.diag(np.exp(-1j * dw * ka * L)) @ Va
+    Ua = np.diag(np.exp(-1j * dw * ka * L)) @ Ua
+    return np.block([[Ua, Va], [Vc, Uc]])
 
 
 def get_JCA(prop):
@@ -175,10 +174,10 @@ def get_JCA(prop):
         array :JCA as a matrix
     """
     Ua, _, Vc, _ = get_blocks(prop)
-    M = Ua @ jnp.conj(Vc).T
-    U, s, V = svd(M)
-    S = jnp.diag(s)
-    R = jnp.arcsin(2 * S) / 2
+    M = Ua @ np.conj(Vc).T
+    U, s, V = np.linalg.svd(M)
+    S = np.diag(s)
+    R = np.arcsin(2 * S) / 2
     J = U @ R @ V
     return J
 
@@ -204,11 +203,11 @@ def get_schmidt(prop):
         array)  :Schmidt coefficients squared
     """
     _, Va, _, _ = get_blocks(prop)
-    Numa = Va @ jnp.conj(Va).T  # Numbers matrix for a-beam
-    Na = jnp.real(jnp.trace(Numa))  # average number of photons in a-beam
-    val, u = jnp.linalg.eigh(Numa)  # schmidt coefficients squared and modes from eigendecomposition
-    val = jnp.flip(val)
-    u = jnp.flip(u, axis=1)
+    Numa = Va @ np.conj(Va).T  # Numbers matrix for a-beam
+    Na = np.real(np.trace(Numa))  # average number of photons in a-beam
+    val, u = np.linalg.eigh(Numa)  # schmidt coefficients squared and modes from eigendecomposition
+    val = np.flip(val)
+    u = np.flip(u, axis=1)
     return Na, val, u
 
 
@@ -229,10 +228,10 @@ def get_schmidt2(prop):
         array)  :the V matrix from the svd of Vc
     """
     _, Va, Vc, _ = get_blocks(prop)
-    varphiV, sinrk1, phiV = svd(Va)
-    xiV, sinrk2, psiV = svd(Vc)
-    varphiV = jnp.flip(varphiV, axis=0)
-    phiV = jnp.flip(phiV, axis=0)
-    xiV = jnp.flip(xiV, axis=0)
-    psiV = jnp.flip(psiV, axis=0)
-    return jnp.conj(varphiV), sinrk1, phiV.T, jnp.conj(xiV), sinrk2, psiV.T
+    varphiV, sinrk1, phiV = np.linalg.svd(Va)
+    xiV, sinrk2, psiV = np.linalg.svd(Vc)
+    varphiV = np.flip(varphiV, axis=0)
+    phiV = np.flip(phiV, axis=0)
+    xiV = np.flip(xiV, axis=0)
+    psiV = np.flip(psiV, axis=0)
+    return np.conj(varphiV), sinrk1, phiV.T, np.conj(xiV), sinrk2, psiV.T
