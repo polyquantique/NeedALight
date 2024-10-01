@@ -35,7 +35,7 @@ def pulse_shape(dw, sig, n=0):
     Returns:
         array: pulse shape
     """
-    gaussian = np.exp(-(dw**2) / (2 * sig**2)) / np.sqrt(2 * np.pi * sig**2)
+    gaussian = np.exp(-(dw**2) / (2 * sig**2)) / (np.pi * sig**2)**(1 / 4)
     return gaussian * hermite(n)(dw / sig)
 
 
@@ -84,9 +84,11 @@ def get_prop(dw, vp, va, vc, pump, L, D=1):
 
     Ka = np.diag(1j * dw * ka)
     Kc = np.diag(1j * dw * kc)
+    
     # Bottom left and upper right (non-diagonal) blocks
+    offdiag = np.conj(D) * pump * (dw[-1] - dw[0]) / (dw.size - 1)
 
-    J = np.block([[Ka, -1j * np.conj(D) * pump], [-1j * D * pump.conj().T, Kc]])
+    J = np.block([[Ka, -1j * offdiag], [-1j * offdiag.conj().T, Kc]])
     prop = expm(J * L)
     return J, prop
 
@@ -158,18 +160,14 @@ def remove_phases(prop, dw, L, vp, va, vc):
     return np.block([[Ua, Va], [Vc, Uc]])
 
 
-def get_JCA(prop):
+def get_JCA(prop, dw):
     """
     Gives the Joint Spectral Amplitude based on the propagator.
 
     Args:
         prop (array): propagator with phases
         dw (array): frequency vector
-        L (float) : length of propagation in crystal
-        vp (float): group velocity for pump
-        va (float): group velocity for a beam
-        vc (float): group velocity for c beam
-
+        
     Returns:
         array :JCA as a matrix
     """
@@ -178,7 +176,8 @@ def get_JCA(prop):
     U, s, V = np.linalg.svd(M)
     S = np.diag(s)
     R = np.arcsin(2 * S) / 2
-    J = U @ R @ V
+    delta_omega = (dw[-1] - dw[0]) / (dw.size - 1)
+    J = U @ R @ V / delta_omega
     return J
 
 
