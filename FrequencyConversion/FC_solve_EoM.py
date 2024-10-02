@@ -153,10 +153,11 @@ def remove_phases(prop, dw, L, vp, va, vc):
     # separate into blocks
     Ua, Va, Vc, Uc = get_blocks(prop)
     # remove phases
-    Uc = np.diag(np.exp(1j * dw * kc * L)) @ Uc
-    Vc = np.diag(np.exp(1j * dw * kc * L)) @ Vc
-    Va = np.diag(np.exp(-1j * dw * ka * L)) @ Va
-    Ua = np.diag(np.exp(-1j * dw * ka * L)) @ Ua
+    Ua = np.diag(np.exp(-1j * dw * ka * L / 2)) @ Ua @ np.diag(np.exp(-1j * dw * ka * L / 2))
+    Va = np.diag(np.exp(-1j * dw * ka * L / 2)) @ Va @ np.diag(np.exp(1j * dw * kc * L / 2))
+    Vc = np.diag(np.exp(1j * dw * kc * L / 2)) @ Vc @ np.diag(np.exp(-1j * dw * ka * L / 2))
+    Uc = np.diag(np.exp(1j * dw * kc * L / 2)) @ Uc @ np.diag(np.exp(1j * dw * kc * L / 2))
+    
     return np.block([[Ua, Va], [Vc, Uc]])
 
 
