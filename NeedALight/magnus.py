@@ -187,7 +187,7 @@ def Magnus3_Im(F, w, c_factor=0.01**3):
     # Reshaping vector into Matrix and removing the convergence factors
     K3 = test3.reshape(len(w), len(w)) / (c_factor)
 
-    return K3
+    return K3*np.pi
 
 
 def Magnus1CW_data(ws, wi, k_o, k_e, k_pol, p_k, L):
