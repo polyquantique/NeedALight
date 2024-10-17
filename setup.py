@@ -15,6 +15,7 @@ requirements = [
     "jupyter",
     "custom-poling",
     "cubature",
+    "tqdm",
 ]
 
 classifiers = [
