@@ -31,8 +31,9 @@ Generates first and third order Magnus terms as given in [Phys. Rev. A 90, 06384
 ## Installation 
 Run the command:
 
+```bash
 pip install git+https://github.com/polyquantique/NeedALight.git
-
+```
 ## Funding
 
 Funding for NeedALight has been supplied by:  
