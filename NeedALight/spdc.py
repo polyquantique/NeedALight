@@ -1,4 +1,4 @@
-"""Functions to produce JSA for variable domain configs """
+"""Functions to produce JSA/moments for SPDC with variable domain configs """
 
 from itertools import product
 import numpy as np
@@ -10,8 +10,8 @@ from scipy.linalg import expm
 # pylint: disable=consider-using-enumerate
 
 
-def Hprop(Np, vs, vi, vp, l, x, f, n):
-    """Generate Heisenberg propagator for given values and pump pulse
+def Hprop(Np, vs, vi, vp, l, x, f, n = 4):
+    """Generate Heisenberg propagator for given values and pump pulse assuming linear dispersion
 
     Args:
         Np (int): Pump photon number
@@ -83,14 +83,13 @@ def Total_prog(domain, prod, P, N):
     return T
 
 
-def phases(T, vs, vi, vp, l, x):
+def phases(T, ks, ki, l, x):
     """Removes free propagation phases from Heisenberg Propagator
 
     Args:
         T (array): Full Heisenberg Propagator
-        vs (float): signal velocity
-        vi (float): idler velocity
-        vp (float): pump velocity
+        ks (float): signal dispersion
+        ki (float): idler dispersion
         l (float): total length of crystal
         x (array): vector of frequencies
 
@@ -100,8 +99,6 @@ def phases(T, vs, vi, vp, l, x):
     """
 
     N = len(T)
-    ks = 1 / vs - 1 / vp
-    ki = 1 / vi - 1 / vp
     Uss = (
         np.diag(np.exp(-1j * ks * x * l / 2))
         @ T[0 : N // 2, 0 : N // 2]
