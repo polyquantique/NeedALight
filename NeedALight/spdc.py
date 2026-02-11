@@ -10,7 +10,7 @@ from scipy.linalg import expm
 # pylint: disable=consider-using-enumerate
 
 #Change Np to be in pump def in examples.
-def Prop_precal(vs, vi, vp, l, w, pump, n = 4):
+def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
     """Generate Heisenberg propagator for given values and pump pulse assuming linear dispersion
     and precalculates all products of n=4 domain configurations
 
@@ -18,7 +18,7 @@ def Prop_precal(vs, vi, vp, l, w, pump, n = 4):
         vs (float): signal velocity
         vi (float): idler velocity
         vp (float): pump velovity
-        l (float): length of crystal slice
+        dz (float): length of crystal slice
         w (array): vector of frequency values
         pump (function): fuctional form of pump pulse (normalized to Np)
         n (int): number of segments we wish to precalculate
@@ -38,8 +38,8 @@ def Prop_precal(vs, vi, vp, l, w, pump, n = 4):
     Q2 = np.block(
         [[G, -F], [np.conj(F).T, -np.conj(H).T]]
     )  # sgn(g(z)) only changes sgn(F)
-    P = expm(1j * Q * l)
-    N = expm(1j * Q2 * l)
+    P = expm(1j * Q * dz)
+    N = expm(1j * Q2 * dz)
     # Finding the products for domain lengths of n-segments
     prod = np.ones((2**n, len(P), len(P)), dtype=np.complex128)
     for i, config in enumerate(product((P, N), repeat=n)):
@@ -183,11 +183,22 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
     N = len(w)
     dw = np.abs(w[1]-w[0])
 
+    #Generating the full propagator
+    if len(domain) == 1:
+        #Unpoled/periodically poled crystal
+        prod,P,N = Prop_precal(vs, vi, vp, l, w, pump)
+        T = P
+    else:
+        #apperiodically poled crystal
+        prod,P,N = Prop_precal(vs, vi, vp, dz, w, pump)
+        T = Total_prop(domain, prod, P, N)
 
+    #Removing free-propagating phases
+    ks = (1/vs -1/vp)*w
+    ki = (1/vi -1/vp)*w
+    T = phases(T, ks, ki, l)
 
-
-
-    return 
+    return T, JSA(T,dw)
 
 
 #Keep first part, to generate single pass.
