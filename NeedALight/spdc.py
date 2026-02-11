@@ -9,18 +9,18 @@ from scipy.linalg import expm
 # pylint: disable=too-many-locals
 # pylint: disable=consider-using-enumerate
 
-
-def Hprop(Np, vs, vi, vp, l, x, f, n = 4):
+#Change Np to be in pump def in examples.
+def Prop_precal(vs, vi, vp, l, w, pump, n = 4):
     """Generate Heisenberg propagator for given values and pump pulse assuming linear dispersion
+    and precalculates all products of n=4 domain configurations
 
     Args:
-        Np (int): Pump photon number
         vs (float): signal velocity
         vi (float): idler velocity
         vp (float): pump velovity
         l (float): length of crystal slice
-        x (array): vector of frequency values
-        f (function): fuctional form of pump pulse (normalized to 1 and not Np)
+        w (array): vector of frequency values
+        pump (function): fuctional form of pump pulse (normalized to Np)
         n (int): number of segments we wish to precalculate
     Returns:
         (array, :Heisenberg propagator for all possible orientations of n-segments
@@ -28,14 +28,12 @@ def Hprop(Np, vs, vi, vp, l, x, f, n = 4):
         array)  :Heisenberg propagator g(z)=-1
     """
     # Constructing matrix for EoM
-    G = np.diag((1 / vs - 1 / vp) * x)
-    H = np.diag((1 / vi - 1 / vp) * x)
-    F = (
-        np.sqrt(Np)
-        * (x[len(x) - 1] - x[0])
-        / (len(x) - 1)
-        / (np.sqrt(2 * np.pi * vs * vi * vp))
-    ) * f(x + x[:, np.newaxis])
+    G = np.diag((1 / vs - 1 / vp) * w)
+    H = np.diag((1 / vi - 1 / vp) * w)
+    F = ((w[len(w) - 1] - w[0])
+        / (len(w) - 1)
+        / (np.sqrt(2 * np.pi * np.abs( vs * vi * vp)))
+    ) * pump(w + w[:, np.newaxis])
     Q = np.block([[G, F], [-np.conj(F).T, -np.conj(H).T]])
     Q2 = np.block(
         [[G, -F], [np.conj(F).T, -np.conj(H).T]]
@@ -52,8 +50,8 @@ def Hprop(Np, vs, vi, vp, l, x, f, n = 4):
     return prod, P, N
 
 
-def Total_prog(domain, prod, P, N):
-    """Heisenberg Propagator for aperiodically polled domain
+def Total_prop(domain, prod, P, N):
+    """Heisenberg Propagator for aperiodically polled domain, assuming linear dispersion
 
     Args:
         domain (array): vector of +/-1's representing sgn of potential
@@ -82,8 +80,8 @@ def Total_prog(domain, prod, P, N):
                 T = N @ T
     return T
 
-
-def phases(T, ks, ki, l, x):
+#Properly modified, just need to change examples to use proper dispersions. 
+def phases(T, ks, ki, l):
     """Removes free propagation phases from Heisenberg Propagator
 
     Args:
@@ -91,7 +89,6 @@ def phases(T, ks, ki, l, x):
         ks (float): signal dispersion
         ki (float): idler dispersion
         l (float): total length of crystal
-        x (array): vector of frequencies
 
     Returns:
         U (array): Heisenberg Propagator w/o free propagation phases
@@ -100,29 +97,100 @@ def phases(T, ks, ki, l, x):
 
     N = len(T)
     Uss = (
-        np.diag(np.exp(-1j * ks * x * l / 2))
+        np.diag(np.exp(-1j * ks  * l / 2))
         @ T[0 : N // 2, 0 : N // 2]
-        @ np.diag(np.exp(-1j * ks * x * l / 2))
+        @ np.diag(np.exp(-1j * ks  * l / 2))
     )
     Usi = (
-        np.diag(np.exp(-1j * ks * x * l / 2))
+        np.diag(np.exp(-1j * ks  * l / 2))
         @ T[0 : N // 2, N // 2 : N]
-        @ np.diag(np.exp(1j * ki * x * l / 2))
+        @ np.diag(np.exp(1j * ki  * l / 2))
     )
     Uiss = (
-        np.diag(np.exp(1j * ki * x * l / 2))
+        np.diag(np.exp(1j * ki * l / 2))
         @ T[N // 2 : N, 0 : N // 2]
-        @ np.diag(np.exp(-1j * ks * x * l / 2))
+        @ np.diag(np.exp(-1j * ks  * l / 2))
     )
     Uiis = (
-        np.diag(np.exp(1j * ki * x * l / 2))
+        np.diag(np.exp(1j * ki  * l / 2))
         @ T[N // 2 : N, N // 2 : N]
-        @ np.diag(np.exp(1j * ki * x * l / 2))
+        @ np.diag(np.exp(1j * ki  * l / 2))
     )
     U = np.block([[Uss, Usi], [Uiss, Uiis]])
     return U
 
+def JSA(K, dk):
+    """Given a total Heisenberg propagator generates the JSA as well as any relevant
+       moment matrix and property
 
+    Args:
+        T (array): Total Heisenberg propagator
+        dk (float): discretization stepsize
+
+    Returns:
+        (array, :Joint spectral amplitude
+        float,  :Number of signal photons
+        float,  :Schmidt number
+        array,  :M moment matrix
+        array,  :signal number matrix
+        array)  :Idler number matrix
+    """
+    N = len(K)
+    Kss = K[0 : N // 2, 0 : N // 2]
+    Ksi = K[0 : N // 2, N // 2 : N]
+    Kiss = K[N // 2 : N, 0 : N // 2]
+    # Constructing the moment matrix
+    M = Kss @ (np.conj(Kiss).T)
+    # Using SVD of M to construct JSA
+    L, s, Vh = np.linalg.svd(M)
+    Sig = np.diag(s)
+    D = np.arcsinh(2 * Sig) / 2
+    J = L @ D @ Vh / dk
+    # Number of signal photons
+    Nums = np.conj(Ksi) @ Ksi.T
+    Numi = Kiss @ (np.conj(Kiss).T)
+    Ns = np.real(np.trace(Nums))
+    # Finding K
+    Schmidt = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
+
+    return J, Ns, Schmidt, M, Nums, Numi
+
+def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
+    """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC assuming linear dispersion
+
+        Args:
+            vs (float): signal velocity
+            vi (float): idler velocity
+            vp (float): pump velocity
+            pump (function): fuctional form of pump pulse (normalized to Np)
+            domain (array): vector of +/-1's representing sgn of potential
+            dz (float): poling/size of domain slices
+            l (float): length of nonlinear crystal
+            w (vector): array of frequencies
+
+
+
+        Returns:
+            (array, :Heisenberg propagator (free-phaseless)
+            array,  :Joint spectral amplitude
+            float,  :Number of signal photons
+            float,  :Schmidt number (K)
+            array,  :M moment matrix
+            array,  :signal number matrix
+            array)  :Idler number matrix
+    
+    """
+    N = len(w)
+    dw = np.abs(w[1]-w[0])
+
+
+
+
+
+    return 
+
+
+#Keep first part, to generate single pass.
 def JSA(T, vs, vi, vp, l, x):
     """Joint spectral amplitude
 
@@ -164,7 +232,7 @@ def JSA(T, vs, vi, vp, l, x):
     K = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
     return J, Ns, K, M, Nums, Numi
 
-
+#Modify such that it just takes the propagator. Change examples to remove free phases before calling this.
 def symplectic_prop(T, vs, vi, vp, l, x):
     """Given a full Heisenberg propagator, generates a symplectic propagator in the xxpp basis
 
@@ -264,10 +332,9 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     return P
 
 
-def FtS2(domain, pump, z_list, k):
+def FtS(domain, pump, z_list, k):
     """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration
-    and pump pulse as functions of (z,t) via looping over k. This should allow for more k-values
-    when compared to FtS which uses np.tensordot which doesn't work for large sets of k.
+    and pump pulse as functions of (z,t) via looping over k.
 
     Args:
         domain (array): array of +/- 1's characterizing the domain configuration
@@ -316,45 +383,12 @@ def Total_propK(domain, pump, z_list, k, t, ws, wi):
     Ri = np.diag(1j * wi)
 
     for i in range(len(t)):
-        S = 1j * FtS2(domain, pump[i, :], z_list, k) * dk / np.sqrt(2 * np.pi)
+        S = 1j * FtS(domain, pump[i, :], z_list, k) * dk / np.sqrt(2 * np.pi)
         Q = np.block([[Rs, S], [np.conjugate(S), Ri]])
         K = expm(Q * dt) @ K
 
     return K
 
 
-def JSAK(K, dk):
-    """Given a total Heisenberg propagator in (k,t) generates the JSA as well as any relevant
-       moment matrix and property
 
-    Args:
-        K (array): Total Heisenberg propagator
-        dk (float): momentum stepsize
 
-    Returns:
-        (array, :Joint spectral amplitude
-        float,  :Number of signal photons
-        float,  :Schmidt number
-        array,  :M moment matrix
-        array,  :signal number matrix
-        array)  :Idler number matrix
-    """
-    N = len(K)
-    Kss = K[0 : N // 2, 0 : N // 2]
-    Ksi = K[0 : N // 2, N // 2 : N]
-    Kiss = K[N // 2 : N, 0 : N // 2]
-    # Constructing the moment matrix
-    M = Kss @ (np.conj(Kiss).T)
-    # Using SVD of M to construct JSA
-    L, s, Vh = np.linalg.svd(M)
-    Sig = np.diag(s)
-    D = np.arcsinh(2 * Sig) / 2
-    J = L @ D @ Vh / dk
-    # Number of signal photons
-    Nums = np.conj(Ksi) @ Ksi.T
-    Numi = Kiss @ (np.conj(Kiss).T)
-    Ns = np.real(np.trace(Nums))
-    # Finding K
-    Schmidt = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
-
-    return J, Ns, Schmidt, M, Nums, Numi
