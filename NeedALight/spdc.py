@@ -186,7 +186,7 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
     #Generating the full propagator
     if len(domain) == 1:
         #Unpoled/periodically poled crystal
-        prod,P,N = Prop_precal(vs, vi, vp, l, w, pump)
+        prod,P,N = Prop_precal(vs, vi, vp, l, w, pump, n = 1)
         T = P
     else:
         #apperiodically poled crystal
