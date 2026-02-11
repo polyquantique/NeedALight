@@ -198,7 +198,10 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
     ki = (1/vi -1/vp)*w
     T = phases(T, ks, ki, l)
 
-    return T, JSA(T,dw)
+    J, Ns, Schmidt, M, Nums, Numi = JSA(T,dw)
+
+
+    return T, J, Ns, Schmidt, M, Nums, Numi
 
 
 #Keep first part, to generate single pass.
