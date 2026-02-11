@@ -202,7 +202,7 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
 
 
 #Keep first part, to generate single pass.
-def JSA(T, vs, vi, vp, l, x):
+def JSA_legacy(T, vs, vi, vp, l, x):
     """Joint spectral amplitude
 
     Args:
