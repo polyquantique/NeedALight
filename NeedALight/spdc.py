@@ -282,7 +282,7 @@ def symplectic_prop(T, vs, vi, vp, l, x):
     return np.conj(R).T @ U2doubled @ R
 
 def cov_mat(Nums,Numi,M):
-    """Constructs the covariance matrix from the second order moments
+    """Constructs the covariance matrix in the 'xxpp' basis from the second order moments
     
     Args:
         Nums (array): signal photon number matrix
@@ -298,7 +298,7 @@ def cov_mat(Nums,Numi,M):
     V =2 * np.conj(R).T @ (np.block([[N_tot.T, M_tot], [np.conj(M_tot), N_tot]])+np.eye(len(R))/2) @ R
 
 
-    return V
+    return np.real_if_close(V)
 
 def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
