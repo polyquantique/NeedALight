@@ -3,6 +3,7 @@
 from itertools import product
 import numpy as np
 from scipy.linalg import expm
+from NeedALight.utils import phases 
 
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
@@ -79,45 +80,6 @@ def Total_prop(domain, prod, P, N):
             else:
                 T = N @ T
     return T
-
-#Properly modified, just need to change examples to use proper dispersions. 
-def phases(T, ks, ki, l):
-    """Removes free propagation phases from Heisenberg Propagator
-
-    Args:
-        T (array): Full Heisenberg Propagator
-        ks (float): signal dispersion
-        ki (float): idler dispersion
-        l (float): total length of crystal
-
-    Returns:
-        U (array): Heisenberg Propagator w/o free propagation phases
-
-    """
-
-    N = len(T)
-    Uss = (
-        np.diag(np.exp(-1j * ks  * l / 2))
-        @ T[0 : N // 2, 0 : N // 2]
-        @ np.diag(np.exp(-1j * ks  * l / 2))
-    )
-    Usi = (
-        np.diag(np.exp(-1j * ks  * l / 2))
-        @ T[0 : N // 2, N // 2 : N]
-        @ np.diag(np.exp(1j * ki  * l / 2))
-    )
-    Uiss = (
-        np.diag(np.exp(1j * ki * l / 2))
-        @ T[N // 2 : N, 0 : N // 2]
-        @ np.diag(np.exp(-1j * ks  * l / 2))
-    )
-    Uiis = (
-        np.diag(np.exp(1j * ki  * l / 2))
-        @ T[N // 2 : N, N // 2 : N]
-        @ np.diag(np.exp(1j * ki  * l / 2))
-    )
-    U = np.block([[Uss, Usi], [Uiss, Uiis]])
-    return U
 
 def JSA(K, dk):
     """Given a total Heisenberg propagator generates the JSA as well as any relevant
@@ -202,103 +164,6 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
 
 
     return T, J, Ns, Schmidt, M, Nums, Numi
-
-
-#Keep first part, to generate single pass.
-def JSA_legacy(T, vs, vi, vp, l, x):
-    """Joint spectral amplitude
-
-    Args:
-        U (array): Heisenberg propagator with free propagation
-        vs (float): signal velocity
-        vi (float): idler velocity
-        vp (float): pump velocity
-        l (float): total length of crystal
-        x (array): vector of frequencies
-
-    Returns:
-        (array, :Joint spectral amplitude
-        float,  :Number of signal photons
-        float,  :K number
-        array,  :M moment matrix
-        array,  :signal number matrix
-        array)  :Idler number matrix
-    """
-    N = len(T)
-    dw = (x[len(x) - 1] - x[0]) / (len(x) - 1)
-    # Removing free propagation phases and breaking it into blocks
-    U = phases(T, vs, vi, vp, l, x)
-    Uss = U[0 : N // 2, 0 : N // 2]
-    Usi = U[0 : N // 2, N // 2 : N]
-    Uiss = U[N // 2 : N, 0 : N // 2]
-    # Constructing the moment matrix
-    M = Uss @ (np.conj(Uiss).T)
-    # Using SVD of M to construct JSA
-    L, s, Vh = np.linalg.svd(M)
-    Sig = np.diag(s)
-    D = np.arcsinh(2 * Sig) / 2
-    J = L @ D @ Vh / dw
-    # Number of signal photons
-    Nums = np.conj(Usi) @ Usi.T
-    Numi = Uiss @ (np.conj(Uiss).T)
-    Ns = np.real(np.trace(Nums))
-    # Finding K
-    K = (np.trace(np.sinh(D) ** 2)) ** 2 / np.trace(np.sinh(D) ** 4)
-    return J, Ns, K, M, Nums, Numi
-
-#Modify such that it just takes the propagator. Change examples to remove free phases before calling this.
-def symplectic_prop(T, vs, vi, vp, l, x):
-    """Given a full Heisenberg propagator, generates a symplectic propagator in the xxpp basis
-
-    Args:
-        U (array): Heisenberg propagator with free propagation
-        vs (float): signal velocity
-        vi (float): idler velocity
-        vp (float): pump velocity
-        l (float): total length of crystal
-        x (array): vector of frequencies
-    Returns:
-        array: Symplectic propagator in the xxpp basis.
-    """
-    N = len(T)
-    # Removing free propagation phases and breaking it into blocks
-    U = phases(T, vs, vi, vp, l, x)
-    Uss = U[0 : N // 2, 0 : N // 2]
-    Usi = U[0 : N // 2, N // 2 : N]
-    Uiss = U[N // 2 : N, 0 : N // 2]
-    Uiis = U[N // 2 : N, N // 2 : N]
-    # First we rewrite propagator in extended basis: (a1,a2...an,b1,..bn,a1\dag... etc)
-    diag = np.block([[Uss, 0 * Uss], [0 * Uiis, np.conj(Uiis)]])
-    offdiag = np.block([[0 * Usi, Usi], [np.conj(Uiss), 0 * Uiss]])
-    U2doubled = np.block([[diag, offdiag], [np.conj(offdiag), np.conj(diag)]])
-    # This rotates from Xa Xb Pa Pb to ab a\dag b\dag basis. Need to apply inverse.
-    R = (1 / np.sqrt(2)) * np.block(
-        [
-            [np.eye(len(U2doubled) // 2), 1j * np.eye(len(U2doubled) // 2)],
-            [np.eye(len(U2doubled) // 2), -1j * np.eye(len(U2doubled) // 2)],
-        ]
-    )
-
-    return np.conj(R).T @ U2doubled @ R
-
-def cov_mat(Nums,Numi,M):
-    """Constructs the covariance matrix in the 'xxpp' basis from the second order moments
-    
-    Args:
-        Nums (array): signal photon number matrix
-        Numi (array): idler photon number matrix
-        M (array): phase-sensitive moment
-
-    Returns:
-        V (array): Covariance matrix  
-    """
-    N_tot = np.block([[Nums, 0 * Nums],[0 * Numi, Numi]])
-    M_tot = np.block([[0 * M, M],[M.T, 0 * M]])
-    R =(1 / np.sqrt(2)) * np.block([[ np.eye(len(N_tot)), 1j * np.eye(len(N_tot))],[np.eye(len(N_tot)), -1j * np.eye(len(N_tot))]])
-    V =2 * np.conj(R).T @ (np.block([[N_tot.T, M_tot], [np.conj(M_tot), N_tot]])+np.eye(len(R))/2) @ R
-
-
-    return np.real_if_close(V)
 
 def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
