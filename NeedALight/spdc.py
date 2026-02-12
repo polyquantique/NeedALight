@@ -281,6 +281,24 @@ def symplectic_prop(T, vs, vi, vp, l, x):
 
     return np.conj(R).T @ U2doubled @ R
 
+def cov_mat(Nums,Numi,M):
+    """Constructs the covariance matrix from the second order moments
+    
+    Args:
+        Nums (array): signal photon number matrix
+        Numi (array): idler photon number matrix
+        M (array): phase-sensitive moment
+
+    Returns:
+        V (array): Covariance matrix  
+    """
+    N_tot = np.block([[Nums, 0 * Nums],[0 * Numi, Numi]])
+    M_tot = np.block([[0 * M, M],[M.T, 0 * M]])
+    R =(1 / np.sqrt(2)) * np.block([[ np.eye(len(N_tot)), 1j * np.eye(len(N_tot))],[np.eye(len(N_tot)), -1j * np.eye(len(N_tot))]])
+    V =2 * np.conj(R).T @ (np.block([[N_tot.T, M_tot], [np.conj(M_tot), N_tot]])+np.eye(len(R))/2) @ R
+
+
+    return V
 
 def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
