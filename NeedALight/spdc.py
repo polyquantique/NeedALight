@@ -117,7 +117,7 @@ def JSA(K, dk):
 
     return J, Ns, Schmidt, M, Nums, Numi
 
-def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
+def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
     """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC assuming linear dispersion
 
         Args:
@@ -129,6 +129,7 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
             dz (float): poling/size of domain slices
             l (float): length of nonlinear crystal
             w (vector): array of frequencies
+            rmv (string): option to choose whether or not we remove free-propagating phases.
 
 
 
@@ -156,9 +157,10 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w):
         T = Total_prop(domain, prod, P, N)
 
     #Removing free-propagating phases
-    ks = (1/vs -1/vp)*w
-    ki = (1/vi -1/vp)*w
-    T = phases(T, ks, ki, l)
+    if rmv:
+        ks = (1 / vs - 1 / vp) * w
+        ki = (1 / vi - 1 / vp) * w
+        T = phases(T, ks, ki, l)
 
     J, Ns, Schmidt, M, Nums, Numi = JSA(T,dw)
 
