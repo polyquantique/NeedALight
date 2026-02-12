@@ -10,7 +10,7 @@ from NeedALight.utils import phases
 # pylint: disable=too-many-locals
 # pylint: disable=consider-using-enumerate
 
-#Change Np to be in pump def in examples.
+
 def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
     """Generate Heisenberg propagator for given values and pump pulse assuming linear dispersion
     and precalculates all products of n=4 domain configurations
