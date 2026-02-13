@@ -167,6 +167,15 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
 
     return T, J, Ns, Schmidt, M, Nums, Numi
 
+def SPulsed_arb(ks,ki,domain,l):
+    """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC for arbitrary dispersion
+    
+    
+    """
+
+
+    return 
+
 def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
         crystal.
@@ -230,7 +239,6 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
 
     return P
 
-
 def FtS(domain, pump, z_list, k):
     """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration
     and pump pulse as functions of (z,t) via looping over k.
@@ -257,7 +265,6 @@ def FtS(domain, pump, z_list, k):
             )
 
     return S
-
 
 def Total_propK(domain, pump, z_list, k, t, ws, wi):
     """Generates the total Heisenberg propagator
