@@ -31,10 +31,8 @@ def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
     # Constructing matrix for EoM
     G = np.diag((1 / vs - 1 / vp) * w)
     H = np.diag((1 / vi - 1 / vp) * w)
-    F = ((w[len(w) - 1] - w[0])
-        / (len(w) - 1)
-        / (np.sqrt(2 * np.pi * np.abs( vs * vi * vp)))
-    ) * pump(w + w[:, np.newaxis])
+    dw = np.abs(w[1]-w[0])
+    F = dw / (np.sqrt(2 * np.pi * np.abs( vs * vi * vp))) * pump(w + w[:, np.newaxis])
     Q = np.block([[G, F], [-np.conj(F).T, -np.conj(H).T]])
     Q2 = np.block(
         [[G, -F], [np.conj(F).T, -np.conj(H).T]]
@@ -263,10 +261,9 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
     # Note that for the pump, we explicitely remove the linear free-propagating phases here (For plotting purposes later)
     for i in range(len(z_list)):
         F = (
-            1j
-            * gamma
+             1j*gamma
             * Lambda_w
-            * np.exp(1j * (kp_w - ks - ki[:, np.newaxis]) * z_list[i])
+            * np.exp(1j * (kp_w - ks[:, np.newaxis] - ki) * z_list[i])   
             * domain[i]
             * dw
         )
