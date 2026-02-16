@@ -231,12 +231,12 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     return P
 
 def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
-    """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC for arbitrary dispersion
+    """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC with arbitrary dispersion
     
      Args:
-        w (array): frequency values of interest for signal
         ks (array): signal dispersion relation
-        kp_w (array): matrix  kp(w+w') needed in the exponential
+        ki (array): idler dispersion relation
+        kp_w (array): pump dispersion matrix  kp(w+w') needed in the exponential
         dw (float): frequency discretization step 
         gamma (float): interaction strength parameter
         z_list (array): discretized interaction region
@@ -258,8 +258,7 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
     T = np.identity(2 * len(ks), dtype=np.complex128)
 
     # Constructing the diagonal blocks
-    Rs = 0 * np.diag(1j * ks)
-    Ri = 0 * np.diag(-1j * ki)
+    Rs = np.zeros([len(ks),len(ks)])
 
     # Note that for the pump, we explicitely remove the linear free-propagating phases here (For plotting purposes later)
     for i in range(len(z_list)):
@@ -267,11 +266,11 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
             1j
             * gamma
             * Lambda_w
-            * np.exp(1j * (kp_w - ks - ks[:, np.newaxis]) * z_list[i])
+            * np.exp(1j * (kp_w - ks - ki[:, np.newaxis]) * z_list[i])
             * domain[i]
             * dw
         )
-        Q = np.block([[Rs, F], [np.conjugate(F).T, Ri]])
+        Q = np.block([[Rs, F], [np.conjugate(F).T, Rs]])
         T = expm(Q * dz) @ T
 
     J, Ns, Schmidt, M, Nums, Numi = JSA(T,dw)    
