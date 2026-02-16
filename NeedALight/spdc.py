@@ -167,15 +167,6 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
 
     return T, J, Ns, Schmidt, M, Nums, Numi
 
-def SPulsed_arb(ks,ki,domain,l):
-    """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC for arbitrary dispersion
-    
-    
-    """
-
-
-    return 
-
 def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
         crystal.
@@ -238,6 +229,47 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
         P = expm(1j * Q * dz) @ P
 
     return P
+
+def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
+    """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC for arbitrary dispersion
+    
+     Args:
+        w (array): frequency values of interest for signal
+        ks (array): signal dispersion relation
+        kp_w (array): matrix  kp(w+w') needed in the exponential
+        dw (float): frequency discretization step 
+        gamma (float): interaction strength parameter
+        z_list (array): discretized interaction region
+        domain (array): poling configuration
+        Lambda_w (function): Pump envelope function in frequency space
+
+    Returns:
+        K (array): Heisenberg Propagator in (z,w) space
+    """
+
+    dz = z_list[1] - z_list[0]
+    # Initializing
+    K = np.identity(2 * len(ks), dtype=np.complex128)
+
+    # Constructing the diagonal blocks
+    Rs = 0 * np.diag(1j * ks)
+    Ri = 0 * np.diag(-1j * ki)
+
+    # Note that for the pump, we explicitely remove the linear free-propagating phases here (For plotting purposes later)
+    for i in range(len(z_list)):
+        F = (
+            1j
+            * gamma
+            * Lambda_w
+            * np.exp(1j * (kp_w - ks - ks[:, np.newaxis]) * z_list[i])
+            * domain[i]
+            * dw
+        )
+        Q = np.block([[Rs, F], [np.conjugate(F).T, Ri]])
+        K = expm(Q * dz) @ K
+
+
+    return 
 
 def FtS(domain, pump, z_list, k):
     """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration
