@@ -241,7 +241,7 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
         gamma (float): interaction strength parameter
         z_list (array): discretized interaction region
         domain (array): poling configuration
-        Lambda_w (function): Pump envelope function in frequency space
+        Lambda_w (array): Pump envelope in frequency space evaluated at (w+w')
 
     Returns:
             (array, : Heisenberg propagator
