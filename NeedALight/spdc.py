@@ -83,7 +83,7 @@ def Total_prop(domain, prod, P, N):
 
 def JSA(K, dk):
     """Given a total Heisenberg propagator generates the JSA as well as any relevant
-       moment matrix and property
+       moment matrix and value
 
     Args:
         T (array): Total Heisenberg propagator
@@ -118,7 +118,7 @@ def JSA(K, dk):
     return J, Ns, Schmidt, M, Nums, Numi
 
 def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
-    """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC assuming linear dispersion
+    """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC assuming linear dispersion
 
         Args:
             vs (float): signal velocity
@@ -231,7 +231,7 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
     return P
 
 def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
-    """Joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC for arbitrary dispersion
+    """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC for arbitrary dispersion
     
      Args:
         w (array): frequency values of interest for signal
@@ -244,12 +244,18 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
         Lambda_w (function): Pump envelope function in frequency space
 
     Returns:
-        K (array): Heisenberg Propagator in (z,w) space
+            (array, : Heisenberg propagator
+            array,  :Joint spectral amplitude
+            float,  :Number of signal photons
+            float,  :Schmidt number (K)
+            array,  :M moment matrix
+            array,  :signal number matrix
+            array)  :Idler number matrix
     """
 
     dz = z_list[1] - z_list[0]
     # Initializing
-    K = np.identity(2 * len(ks), dtype=np.complex128)
+    T = np.identity(2 * len(ks), dtype=np.complex128)
 
     # Constructing the diagonal blocks
     Rs = 0 * np.diag(1j * ks)
@@ -266,10 +272,11 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
             * dw
         )
         Q = np.block([[Rs, F], [np.conjugate(F).T, Ri]])
-        K = expm(Q * dz) @ K
+        T = expm(Q * dz) @ T
 
+    J, Ns, Schmidt, M, Nums, Numi = JSA(T,dw)    
 
-    return 
+    return T, J, Ns, Schmidt, M, Nums, Numi
 
 def FtS(domain, pump, z_list, k):
     """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration
