@@ -373,17 +373,17 @@ def Scw(ks, ki, gamma, L):
 
     return K, J, M, Nums, Numi 
 
-def Scw_dist(gamma, ks, ki, kappaS, kappaI, z, L):
+def Scw_dist(ks, ki, kappaS, kappaI, gamma, z, L):
     """Generates 2nd order moments after passing through a distributed loss nonlinear region
     in the continuous-wave regime.
-    
+
     Args
     --------
-        gamma (float): interaction strength parameter
         ks (array): vector of signal dispersion relation centered at 0
         ki (array): vector of idler dispersion relation centered at 0
         kappaS (array): vector of absorption/loss parameters for signal
         kappaI (array): vector of absorption/loss parameters for signal
+        gamma (float): interaction strength parameter
         z (array): vector of position values, taken from 0 to L
         L (float): length of the nonlinear region
 
