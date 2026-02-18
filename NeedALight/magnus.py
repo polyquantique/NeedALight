@@ -17,7 +17,7 @@ def Magnus1(F, w):
         w (array): list of frequencies
 
     Returns:
-        (array): J1(w,w'): first order Magnus term
+        F (array): J1(w,w'): first order Magnus term
     """
 
     return F(w, w[:, np.newaxis], w + w[:, np.newaxis])
@@ -32,7 +32,7 @@ def Magnus3_Re(F, w, c_factor=0.01**3):
         c_factor (float): convergence factor for cubature
 
     Returns:
-        (array): J3(w,w'): real part of third order Magnus term
+        J3(w,w') (array): real part of third order Magnus term
     """
     # This term is broken down into two different contribution.
 
@@ -147,7 +147,7 @@ def Magnus3_Im(F, w, c_factor=0.01**3):
         c_factor (float): convergence factor for cubature
 
     Returns:
-        (array): K3(w,w'): imagineray part of third order Magnus term
+        K3(w,w') (array): imagineray part of third order Magnus term
     """
 
     # Defining the K3 function for cubature. Extra factor for convergence.
