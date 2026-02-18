@@ -6,10 +6,12 @@ import numpy as np
 def blocks(T):
     """ Given a (2n x 2n) matrix, outputs the four (n x n) blocks
     
-    Args:
+    Args
+    --------
         T (array): Even square matrix
 
-    Returns:
+    Returns
+    --------
         Tss (array): Top left (n x n) block
         Tsi (array): Top right (n x n) block
         Tiss (array): Bottom left (n x n) block
@@ -107,9 +109,10 @@ def cov_mat(Nums,Numi,M):
     return np.real_if_close(V)
 
 def Update_bs(ks, ki, eta_s, eta_i, Ns, Ni, M):
-    """Modifies 2nd order moment matrices to account for presence of both additional dispersion
-     and absorption via a beamsplitter interaction
-    Args:
+    """Modifies 2nd order moment matrices to account for presence of both additional dispersion and absorption via a beamsplitter interaction
+
+    Args
+    --------
         ks (array): vector of additional dispersion for signal
         ki (array): vector of additional dispersion for idler
         eta_s (array): vector of absorption/loss parameter for signal
@@ -117,7 +120,9 @@ def Update_bs(ks, ki, eta_s, eta_i, Ns, Ni, M):
         Ns (array): signal number matrix before dispersive/absorptive region
         Ni (array): idler number matrix before dispersive/absorptive region
         M (array):  signal/idler correlation matrix before dispersive/absorptive region
-    Returns:
+
+    Returns
+    --------
         Ns_f (array): signal number matrix after dispersive/absorptive region
         Ni_f (array): idler number matrix after dispersive/absorptive region
         M_f (array):  signal/idler correlation matrix after dispersive/absorptive region
@@ -134,15 +139,16 @@ def Update_bs(ks, ki, eta_s, eta_i, Ns, Ni, M):
     return Ns_f, Ni_f, M_f
 
 def Update_spdc(U, Ns, Ni, M):
-    """Modifies 2nd order moment matrices to account for a pass in a nonlinear region 
-    subjected to spdc interaction
+    """Modifies 2nd order moment matrices to account for a pass in a nonlinear region subjected to spdc interaction
 
-    Args:
+    Args
+    --------
         U (array): Heisenberg propagator
         Ns (array): signal number matrix before the nonlinear region
         Ni (array): idler number matrix before the nonlinear region
         M (array):  signal/idler correlation matrix before the nonlinear region
-    Returns:
+    Returns
+    --------
         Ns_f (array,array): signal number matrix after the nonlinear region
         Ni_f (array,array): idler number matrix after the nonlinear region
         M_f (array,array):  signal/idler correlation matrix after the nonlinear region
