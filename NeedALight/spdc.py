@@ -371,7 +371,7 @@ def Scw(ks, ki, gamma, L):
 
     J, _Ns, _Schmidt, M, Nums, Numi = JSA(K,1) 
 
-    return K, J, M, Nums, Numi 
+    return K, J, M, np.real_if_close(Nums), np.real_if_close(Numi) 
 
 def Scw_dist(ks, ki, kappaS, kappaI, gamma, z, L):
     """Generates 2nd order moments after passing through a distributed loss nonlinear region
