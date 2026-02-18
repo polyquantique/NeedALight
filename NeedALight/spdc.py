@@ -24,9 +24,9 @@ def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
         pump (function): fuctional form of pump pulse (normalized to Np)
         n (int): number of segments we wish to precalculate
     Returns:
-        (array, :Heisenberg propagator for all possible orientations of n-segments
-        array,  :Heisenberg propagator g(z)=1
-        array)  :Heisenberg propagator g(z)=-1
+        prod (array): Heisenberg propagator for all possible orientations of n-segments
+        P (array): Heisenberg propagator g(z)=1
+        N (array): Heisenberg propagator g(z)=-1
     """
     # Constructing matrix for EoM
     G = np.diag((1 / vs - 1 / vp) * w)
@@ -57,7 +57,7 @@ def Total_prop(domain, prod, P, N):
         N (array): Heisenberg propagator for segment dz with g(z)=-1
 
     Returns:
-        array: Heisenberg propagator over poled crystal
+        T (array): Heisenberg propagator over poled crystal
     """
     Nd = len(domain)
     n = int(np.log2(len(prod)))
@@ -87,12 +87,12 @@ def JSA(K, dk):
         dk (float): discretization stepsize
 
     Returns:
-        (array, :Joint spectral amplitude
-        float,  :Number of signal photons
-        float,  :Schmidt number
-        array,  :M moment matrix
-        array,  :signal number matrix
-        array)  :Idler number matrix
+        J (array): Joint spectral amplitude
+        Ns (float): Number of signal photons
+        Schmidt (float): Schmidt number
+        M (array): M moment matrix
+        Nums (array): Signal number matrix
+        Numi (array): Idler number matrix
     """
     N = len(K)
     Kss = K[0 : N // 2, 0 : N // 2]
@@ -131,13 +131,13 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
 
 
         Returns:
-            (array, :Heisenberg propagator (free-phaseless)
-            array,  :Joint spectral amplitude
-            float,  :Number of signal photons
-            float,  :Schmidt number (K)
-            array,  :M moment matrix
-            array,  :signal number matrix
-            array)  :Idler number matrix
+            T (array): Heisenberg propagator (free-phaseless)
+            J (array): Joint spectral amplitude
+            Ns (float): Number of signal photons
+            Schmidt (float): Schmidt number (K)
+            M (array): M moment matrix
+            Nums (array): Signal number matrix
+            Numi (array): Idler number matrix
     
     """
     N = len(w)
@@ -181,7 +181,7 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
         density (function): Fourier transform of the energy density
         w (array): vector of frequency values
     Returns:
-        array: Full Heisenberg propagator
+        P (array): Full Heisenberg propagator
 
     """
     N = len(w)
@@ -241,13 +241,13 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
         Lambda_w (array): Pump envelope in frequency space evaluated at (w+w')
 
     Returns:
-            (array, : Heisenberg propagator
-            array,  :Joint spectral amplitude
-            float,  :Number of signal photons
-            float,  :Schmidt number (K)
-            array,  :M moment matrix
-            array,  :signal number matrix
-            array)  :Idler number matrix
+        T (array): Heisenberg propagator (free-phaseless)
+        J (array): Joint spectral amplitude
+        Ns (float): Number of signal photons
+        Schmidt (float): Schmidt number (K)
+        M (array): M moment matrix
+        Nums (array): Signal number matrix
+        Numi (array): Idler number matrix
     """
 
     dz = z_list[1] - z_list[0]
@@ -283,7 +283,7 @@ def FtS(domain, pump, z_list, k):
         z_list (array): list of position values, taken at center point, of crystal positions
         k (array): array momentum values
     Returns:
-        (array): S(k+k',t) matrix for a specific time 't'
+        S(k+k',t) (array): matrix for a specific time 't'
     """
     S = np.zeros((len(k), len(k)), dtype=np.complex128)
     dz = z_list[1] - z_list[0]
@@ -311,7 +311,7 @@ def Total_propK(domain, pump, z_list, k, t, ws, wi):
         ws (array): dispersion relation for signal photons (function of momenta)
         wi (array): dispersion relation for idler photon (function of momenta)
     Returns:
-        (array): K(k+k',tf), the total Heisenberg propagator at final time
+        K(k+k',tf) (array): total Heisenberg propagator at final time
     """
     # Initializing
     K = np.identity(2 * len(k), dtype=np.complex128)
