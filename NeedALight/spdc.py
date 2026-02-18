@@ -16,7 +16,8 @@ def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
     """Generate Heisenberg propagator for given values and pump pulse assuming linear dispersion
     and precalculates all products of n=4 domain configurations
 
-    Args:
+    Args
+    --------
         vs (float): signal velocity
         vi (float): idler velocity
         vp (float): pump velovity
@@ -24,7 +25,8 @@ def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
         w (array): vector of frequency values
         pump (function): fuctional form of pump pulse (normalized to Np)
         n (int): number of segments we wish to precalculate
-    Returns:
+    Returns
+    --------
         prod (array): Heisenberg propagator for all possible orientations of n-segments
         P (array): Heisenberg propagator g(z)=1
         N (array): Heisenberg propagator g(z)=-1
@@ -52,12 +54,14 @@ def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
 def Total_prop(domain, prod, P, N):
     """Heisenberg Propagator for aperiodically polled domain, assuming linear dispersion
 
-    Args:
+    Args
+    --------
         domain (array): vector of +/-1's representing sgn of potential
         P (array): Heisenberg propagator for segment dz with g(z)=1
         N (array): Heisenberg propagator for segment dz with g(z)=-1
 
-    Returns:
+    Returns
+    --------
         T (array): Heisenberg propagator over poled crystal
     """
     Nd = len(domain)
@@ -80,20 +84,21 @@ def Total_prop(domain, prod, P, N):
     return T
 
 def JSA(K, dk):
-    """Given a total Heisenberg propagator generates the JSA as well as any relevant
-       moment matrix and value
+    """Given a total Heisenberg propagator generates the JSA as well as any relevant moment matrix and value
 
-    Args:
-        T (array): Total Heisenberg propagator
-        dk (float): discretization stepsize
+        Args
+        --------
+            T (array): Total Heisenberg propagator
+            dk (float): discretization stepsize
 
-    Returns:
-        J (array): Joint spectral amplitude
-        Ns (float): Number of signal photons
-        Schmidt (float): Schmidt number
-        M (array): M moment matrix
-        Nums (array): Signal number matrix
-        Numi (array): Idler number matrix
+        Returns
+        --------
+            J (array): Joint spectral amplitude
+            Ns (float): Number of signal photons 
+            Schmidt (float): Schmidt number
+            M (array): M moment matrix 
+            Nums (array): Signal number matrix 
+            Numi (array): Idler number matrix 
     """
     #Obtaining blocks
     Kss, Ksi, Kiss, _Kiis = blocks(K)
@@ -116,7 +121,8 @@ def JSA(K, dk):
 def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
     """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC assuming linear dispersion
 
-        Args:
+        Args
+        --------
             vs (float): signal velocity
             vi (float): idler velocity
             vp (float): pump velocity
@@ -129,7 +135,8 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
 
 
 
-        Returns:
+        Returns
+        --------
             T (array): Heisenberg propagator (free-phaseless)
             J (array): Joint spectral amplitude
             Ns (float): Number of signal photons
@@ -164,10 +171,10 @@ def SPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
     return T, J, Ns, Schmidt, M, Nums, Numi
 
 def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
-    """Generate Full Heisenberg propagator including SPM and XPM for an unpoled
-        crystal.
+    """Generate Full Heisenberg propagator including SPM and XPM for an unpoled crystal.
 
-    Args:
+    Args
+    --------
         Np (int): Pump photon number
         vs (float): signal velocity
         vi (float): idler velocity
@@ -179,7 +186,8 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
         beta (function): fuctional form of pump pulse at z0(normalized to Np)
         density (function): Fourier transform of the energy density
         w (array): vector of frequency values
-    Returns:
+    Returns
+    --------
         P (array): Full Heisenberg propagator
 
     """
@@ -229,7 +237,8 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
 def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
     """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC with arbitrary dispersion
     
-     Args:
+     Args
+     --------
         ks (array): signal dispersion relation
         ki (array): idler dispersion relation
         kp_w (array): pump dispersion matrix  kp(w+w') needed in the exponential
@@ -239,7 +248,8 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
         domain (array): poling configuration
         Lambda_w (array): Pump envelope in frequency space evaluated at (w+w')
 
-    Returns:
+    Returns
+    --------
         T (array): Heisenberg propagator (free-phaseless)
         J (array): Joint spectral amplitude
         Ns (float): Number of signal photons
@@ -273,16 +283,17 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
     return T, J, Ns, Schmidt, M, Nums, Numi
 
 def FtS(domain, pump, z_list, k):
-    """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration
-    and pump pulse as functions of (z,t) via looping over k.
+    """Generates the fourier transform evaluated at (k,t) of the product of the domain configuration and pump pulse as functions of (z,t) via looping over k.
 
-    Args:
+    Args
+    --------
         domain (array): array of +/- 1's characterizing the domain configuration
         pump (function): functional form of pump pulse as a function of (t,z) normalized to Np
         z_list (array): list of position values, taken at center point, of crystal positions
         k (array): array momentum values
-    Returns:
-        S(k+k',t) (array): matrix for a specific time 't'
+    Returns
+    --------
+        S (array): matrix for a specific time 't'
     """
     S = np.zeros((len(k), len(k)), dtype=np.complex128)
     dz = z_list[1] - z_list[0]
@@ -302,15 +313,17 @@ def FtS(domain, pump, z_list, k):
 def Total_propK(domain, pump, z_list, k, t, ws, wi):
     """Generates the total Heisenberg propagator
 
-    Args:
+    Args
+    --------
         domain (array): array of +/- 1's characterizing the domain configuration
         pump (array): array of pump pulse as a function of (t,z) normalized to Np
         z_list (array): list of position values, taken at center point, where nonlinearity exists
         k (array): array of momentum values
         ws (array): dispersion relation for signal photons (function of momenta)
         wi (array): dispersion relation for idler photon (function of momenta)
-    Returns:
-        K(k+k',tf) (array): total Heisenberg propagator at final time
+    Returns
+    --------
+        K (array): total Heisenberg propagator at final time
     """
     # Initializing
     K = np.identity(2 * len(k), dtype=np.complex128)
@@ -329,20 +342,22 @@ def Total_propK(domain, pump, z_list, k, t, ws, wi):
     return K
 
 def Scw(ks, ki, gamma, L):
-    """Generates the Heisenberg propagator, joint spectral amplitude, and 2nd order moments 
-        in the continous-wave limit and in matrix form
+    """Generates the Heisenberg propagator, joint spectral amplitude, and 2nd order moments in the continous-wave limit and in matrix form
 
-    Args:
+    Args
+    --------
         ks (array): vector of dispersion relation for signal to any order
         ki (array): vector of dispersion relation for idler to any order
         gamma (float): interaction strength
         L (float): crystal length
-    Returns:
+
+    Returns
+    --------
         K (array): Heisenberg Propagator in matrix form
         J (array): Joint spectral amplitude
         M (array): M moment matrix
         Nums (array): Signal number matrix
-        Numi (array): Idler number matrix
+        Numi (array): Idler number matrix    
     """
     # Constructing the CW propagator
     Rs = 1j * np.diag(ks)
@@ -361,7 +376,9 @@ def Scw(ks, ki, gamma, L):
 def Scw_dist(gamma, ks, ki, kappaS, kappaI, z, L):
     """Generates 2nd order moments after passing through a distributed loss nonlinear region
     in the continuous-wave regime.
-    Args:
+    
+    Args
+    --------
         gamma (float): interaction strength parameter
         ks (array): vector of signal dispersion relation centered at 0
         ki (array): vector of idler dispersion relation centered at 0
@@ -369,7 +386,9 @@ def Scw_dist(gamma, ks, ki, kappaS, kappaI, z, L):
         kappaI (array): vector of absorption/loss parameters for signal
         z (array): vector of position values, taken from 0 to L
         L (float): length of the nonlinear region
-    Returns:
+
+    Returns
+    --------
         Ns_f (array): signal number vector after the lossy-nonlinear region
         Ni_f (array): idler number vector after the lossy-nonlinear region
         M_f (array):  signal/idler correlation vector after the lossy-nonlinear region
