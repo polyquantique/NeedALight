@@ -3,7 +3,7 @@
 from itertools import product
 import numpy as np
 from scipy.linalg import expm
-from NeedALight.utils import phases 
+from NeedALight.utils import phases, blocks 
 
 # pylint: disable=invalid-name
 # pylint: disable=too-many-arguments
@@ -94,10 +94,8 @@ def JSA(K, dk):
         Nums (array): Signal number matrix
         Numi (array): Idler number matrix
     """
-    N = len(K)
-    Kss = K[0 : N // 2, 0 : N // 2]
-    Ksi = K[0 : N // 2, N // 2 : N]
-    Kiss = K[N // 2 : N, 0 : N // 2]
+    #Obtaining blocks
+    Kss, Ksi, Kiss, _Kiis = blocks(K)
     # Constructing the moment matrix
     M = Kss @ (np.conj(Kiss).T)
     # Using SVD of M to construct JSA
