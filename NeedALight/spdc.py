@@ -48,7 +48,6 @@ def Prop_precal(vs, vi, vp, dz, w, pump, n = 4):
         prod[i] = T
     return prod, P, N
 
-
 def Total_prop(domain, prod, P, N):
     """Heisenberg Propagator for aperiodically polled domain, assuming linear dispersion
 
