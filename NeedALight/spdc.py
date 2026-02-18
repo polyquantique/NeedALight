@@ -2,6 +2,7 @@
 
 from itertools import product
 import numpy as np
+import cmath as cm
 from scipy.linalg import expm
 from NeedALight.utils import phases, blocks 
 
@@ -326,6 +327,120 @@ def Total_propK(domain, pump, z_list, k, t, ws, wi):
         K = expm(Q * dt) @ K
 
     return K
+
+def Scw(ks, ki, gamma, L):
+    """Generates the Heisenberg propagator, joint spectral amplitude, and 2nd order moments 
+        in the continous-wave limit and in matrix form
+
+    Args:
+        ks (array): vector of dispersion relation for signal to any order
+        ki (array): vector of dispersion relation for idler to any order
+        gamma (float): interaction strength
+        L (float): crystal length
+    Returns:
+        K (array): Heisenberg Propagator in matrix form
+        J (array): Joint spectral amplitude
+        M (array): M moment matrix
+        Nums (array): Signal number matrix
+        Numi (array): Idler number matrix
+    """
+    # Constructing the CW propagator
+    Rs = 1j * np.diag(ks)
+    Ri = -1j * np.diag(ki)
+    F = (
+        1j * gamma * np.flipud(np.eye(len(ks)))
+    )  # We flip up-down to obtain an anti-diagonal matrix since for CW we mix +w to -w
+    Q = np.block([[Rs, F], [np.conjugate(F).T, Ri]])
+
+    K = expm(Q * L)
+
+    J, _Ns, _Schmidt, M, Nums, Numi = JSA(K,1) 
+
+    return K, J, M, Nums, Numi 
+
+def Scw_dist(gamma, ks, ki, kappaS, kappaI, z, L):
+    """Generates 2nd order moments after passing through a distributed loss nonlinear region
+    in the continuous-wave regime.
+    Args:
+        gamma (float): interaction strength parameter
+        ks (array): vector of signal dispersion relation centered at 0
+        ki (array): vector of idler dispersion relation centered at 0
+        kappaS (array): vector of absorption/loss parameters for signal
+        kappaI (array): vector of absorption/loss parameters for signal
+        z (array): vector of position values, taken from 0 to L
+        L (float): length of the nonlinear region
+    Returns:
+        Ns_f (array): signal number vector after the lossy-nonlinear region
+        Ni_f (array): idler number vector after the lossy-nonlinear region
+        M_f (array):  signal/idler correlation vector after the lossy-nonlinear region
+        N_b (array):  vector of the bare contribution to the number moment
+        M_b (array):  vector of the bare contribution to the s/i correlation moment
+    """
+    # Modifying dispersion
+    ksn = ks + 1j * kappaS / 2
+    kin = ki - 1j * kappaI / 2
+
+    # Initializing
+    dz = z[1] - z[0]
+    Ns = np.zeros_like(ks)
+    Ni = np.zeros_like(ks)
+    M = np.zeros_like(ks)
+
+    # Obtaining moments from propagator without added noise
+    vals1 = (ksn + np.flip(kin)) ** 2 - 4 * gamma**2
+    nu_a1 = np.asarray([cm.sqrt(x) for x in vals1])
+    cos1 = np.asarray([cm.cos(x * L / 2) for x in nu_a1])
+    sin1 = np.asarray([cm.sin(x * L / 2) for x in nu_a1])
+
+    Ns1 = (
+        4
+        * np.exp(-(kappaS + np.flip(kappaI)) * L / 2)
+        * gamma**2
+        * (sin1 / nu_a1)
+        * ((sin1 / nu_a1).conj())
+    )
+    M1 = np.exp(-(kappaS + np.flip(kappaI)) * L / 2) * (
+        2j
+        * (cos1 + 1j * (ksn + np.flip(kin)) * (sin1 / nu_a1))
+        * (gamma * (sin1 / nu_a1).conj())
+    )
+
+    # Obtaining added noise contribution
+    for i in range(len(z)):
+        ZZ = L - z[i]
+        vals = (ksn + np.flip(kin)) ** 2 - 4 * gamma**2
+        nu_a = np.asarray([cm.sqrt(x) for x in vals])
+        cos = np.asarray([cm.cos(x * ZZ / 2) for x in nu_a])
+        sin = np.asarray([cm.sin(x * ZZ / 2) for x in nu_a])
+
+        Ns = Ns + np.flip(kappaI) * (
+            2j * gamma * sin / nu_a * np.exp(1j * (ksn - np.flip(kin)) * ZZ / 2)
+        ) * np.conj(
+            2j * gamma * sin / nu_a * np.exp(1j * (ksn - np.flip(kin)) * ZZ / 2)
+        )
+        Ni = Ni + np.flip(kappaS) * np.flip(
+            (-2j * gamma * sin / nu_a * np.exp(1j * (ksn - np.flip(kin)) * ZZ / 2))
+        ) * np.conj(
+            np.flip(
+                (-2j * gamma * sin / nu_a * np.exp(1j * (ksn - np.flip(kin)) * ZZ / 2))
+            )
+        )
+        M = M + (kappaS) * (
+            (cos + 1j * (ksn + np.flip(kin)) * (sin / nu_a))
+            * np.exp(1j * (ksn - np.flip(kin)) * ZZ / 2)
+        ) * (
+            np.conj(
+                (-2j * gamma * sin / nu_a * np.exp(1j * (ksn - np.flip(kin)) * ZZ / 2))
+            )
+        )
+
+    Ns_f = Ns1 + Ns * dz
+    Ni_f = np.flip(Ns1) + Ni * dz
+    M_f = M1 + M * dz
+    N_b = Ns1
+    M_b = M1
+
+    return Ns_f.real, Ni_f.real, M_f, N_b.real, M_b
 
 
 
