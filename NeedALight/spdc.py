@@ -234,7 +234,7 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
 
     return P
 
-def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
+def SPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
     """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC with arbitrary dispersion
     
      Args
@@ -242,11 +242,11 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
         ks (array): signal dispersion relation
         ki (array): idler dispersion relation
         kp_w (array): pump dispersion matrix  kp(w+w') needed in the exponential
-        dw (float): frequency discretization step 
+        w (array): vector of frequencies 
         gamma (float): interaction strength parameter
         z_list (array): discretized interaction region
         domain (array): poling configuration
-        Lambda_w (array): Pump envelope in frequency space evaluated at (w+w')
+        Lambda_w (function): Pump envelope in function infrequency space
 
     Returns
     --------
@@ -260,6 +260,7 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
     """
 
     dz = z_list[1] - z_list[0]
+    dw = np.abs(w[1]-w[0])
     # Initializing
     T = np.identity(2 * len(ks), dtype=np.complex128)
 
@@ -270,7 +271,7 @@ def SPulsed_arb(ks, ki, kp_w, gamma, dw, z_list, domain, Lambda_w):
     for i in range(len(z_list)):
         F = (
              1j*gamma
-            * Lambda_w
+            * Lambda_w(w+w[:,np.newaxis])
             * np.exp(1j * (kp_w - ks[:, np.newaxis] - ki) * z_list[i])   
             * domain[i]
             * dw
