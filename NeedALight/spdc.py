@@ -236,27 +236,27 @@ def SXPM_prop(vs, vi, vp, y, spm, xpms, xpmi, beta, density, domain, w):
 
 def SPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
     """Heisenberg propagator, joint spectral amplitude, 2nd order moments, and other values for pulsed SPDC with arbitrary dispersion
-    
+
      Args
      --------
-        ks (array): signal dispersion relation
-        ki (array): idler dispersion relation
-        kp_w (array): pump dispersion matrix  kp(w+w') needed in the exponential
-        w (array): vector of frequencies 
-        gamma (float): interaction strength parameter
-        z_list (array): discretized interaction region
-        domain (array): poling configuration
-        Lambda_w (function): Pump envelope in function infrequency space
+            ks (array): signal dispersion relation
+            ki (array): idler dispersion relation
+            kp_w (array): pump dispersion matrix  kp(w+w') needed in the exponential
+            w (array): vector of frequencies 
+            gamma (float): interaction strength parameter
+            z_list (array): discretized interaction region
+            domain (array): poling configuration
+            Lambda_w (function): Pump envelope in function infrequency space
 
     Returns
     --------
-        T (array): Heisenberg propagator (free-phaseless)
-        J (array): Joint spectral amplitude
-        Ns (float): Number of signal photons
-        Schmidt (float): Schmidt number (K)
-        M (array): M moment matrix
-        Nums (array): Signal number matrix
-        Numi (array): Idler number matrix
+            T (array): Heisenberg propagator (free-phaseless)
+            J (array): Joint spectral amplitude
+            Ns (float): Number of signal photons
+            Schmidt (float): Schmidt number (K)
+            M (array): M moment matrix
+            Nums (array): Signal number matrix
+            Numi (array): Idler number matrix
     """
 
     dz = z_list[1] - z_list[0]
