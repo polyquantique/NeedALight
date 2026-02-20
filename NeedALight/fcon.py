@@ -171,7 +171,7 @@ def FPulsed_lin(vs, vi, vp, pump, domain, dz, l, w, rmv=True):
 
     return T, J, Eff, S, Us, Ui, Vs, Vi
 
-def SPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
+def FPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
     """Heisenberg propagator, joint spectral distribution, input-output mode, and other values for pulsed frequency conversion assuming linear dispersion
     
      Args
