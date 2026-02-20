@@ -222,3 +222,38 @@ def FPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
     J, Eff, S, Us, Ui, Vs, Vi = JSD(T,dw)  
 
     return T, J, Eff, S, Us, Ui, Vs, Vi
+
+def Fcw(ks, ki, gamma, L):
+    """Efficiency for continuous-wave frequency conversion
+
+    Args
+    --------
+        ks (array): vector of dispersion relation for signal to any order
+        ki (array): vector of dispersion relation for idler to any order
+        gamma (float): interaction strength
+        L (float): crystal length
+
+    Returns
+    --------
+         T (array): Heisenberg propagator (free-phaseless)
+         J (array): Joint spectral distribution
+         Eff (array): vector of conversion efficiencies
+    """
+    #Because cossin outputs the sin/cos values in order, we need to eval the efficiency and JSD point-by-point
+
+    JSD = np.zeros(len(ks))
+    Eff = np.zeros(len(ks))
+
+    for i in range(len(ks)):
+        # Constructing the CW propagator
+        Rs = 1j * ks[i]
+        Ri = 1j * ki[i]
+        F = 1j * gamma 
+        Q = np.asarray([[Rs, F], [F, Ri]])
+
+        K = expm(Q * L)
+
+        U, cs, Vd = cossin(K, p = 1, q = 1)
+        Eff[i] = cs[0, 1]**2
+
+    return Eff
