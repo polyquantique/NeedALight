@@ -185,8 +185,9 @@ def FPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
             domain (array): poling configuration
             Lambda_w (function): Pump envelope function in frequency space
 
-    Returns
-    --------
+            
+     Returns
+     --------
             T (array): Heisenberg propagator (free-phaseless)
             J (array): Joint spectral distribution
             Eff (array): vector of conversion efficiencies
@@ -195,6 +196,7 @@ def FPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
             Ui (array): matrix of output idler mode column vectors
             Vs (array): matrix of input signal mode column vectors
             Vi (array): matrix of input idler mode column vectors
+    
     """
 
     dz = z_list[1] - z_list[0]
