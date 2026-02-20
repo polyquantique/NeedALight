@@ -34,7 +34,7 @@ def Prop_precal_fc(vs, vi, vp, dz, w, pump, n = 4):
     G = np.diag((1 / vs - 1 / vp) * w)
     H = np.diag((1 / vi - 1 / vp) * w)
     dw = np.abs(w[1]-w[0])
-    F = dw / (np.sqrt(2 * np.pi * np.abs( vs * vi * vp))) * pump(w - w[:, np.newaxis])
+    F = dw / (np.sqrt(2 * np.pi * np.abs( vs * vi * vp))) * pump(w - w[:, np.newaxis]).conj()
     Q = np.block([[G, F], [np.conj(F).T, np.conj(H).T]])
     Q2 = np.block(
         [[G, -F], [-np.conj(F).T, np.conj(H).T]]
@@ -106,7 +106,7 @@ def JSD(K, dk):
     # Using SVD of Top-right block to construct JSD
     L, s, Vh = np.linalg.svd(Ksi)
     Sig = np.diag(s)
-    D = np.arcsin(Sig) / 2
+    D = np.arcsin(Sig)
     J = (L @ D @ Vh / dk).T 
     # Bloch-messiah decomp
     N = len(K)//2
@@ -210,14 +210,14 @@ def FPulsed_arb(ks, ki, kp_w, gamma, w, z_list, domain, Lambda_w):
     # Note that for the pump, we explicitely remove the linear free-propagating phases here (For plotting purposes later)
     for i in range(len(z_list)):
         F = (
-             1j*gamma
-            * Lambda_w(w-w[:,np.newaxis])
-            * np.exp(1j * (kp_w + ks[:, np.newaxis] - ki) * z_list[i])   
+             gamma
+            * Lambda_w(w-w[:,np.newaxis]).conj()
+            * np.exp(-1j * (kp_w + ks[:, np.newaxis] - ki) * z_list[i])  
             * domain[i]
             * dw
         )
-        Q = np.block([[Rs, F], [np.conjugate(F).T, Rs]])
-        T = expm(Q * dz) @ T
+        Q = np.block([[Rs, F], [np.conjugate(F).T, Rs]]) 
+        T = expm(1j*Q * dz) @ T
 
     J, Eff, S, Us, Ui, Vs, Vi = JSD(T,dw)  
 
