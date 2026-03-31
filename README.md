@@ -1,5 +1,6 @@
 # NeedALight
 A library that can be used to generate Heisenberg Propagators for waveguided sources, in either frequency-space or momentum-time space, and analyse the temporal mode structure of the light generated.
+Given solution to the equation of motion one can construct figures of merit for the nonlinear processes and optimize them accordingly.
 
 If you find this library useful in your research please cite our paper, 
 
